@@ -1,0 +1,15 @@
+{
+  "avisos": [
+    {
+      "id": "2026-10-01-01",
+      "titulo": "¡Bienvenidos al canal oficial!",
+      "texto": "Aquí te avisaremos de emisoras nuevas, concursos y novedades.",
+      "fecha": "2026-10-01",
+      "push": false,
+      "accion": {
+        "tipo": "pais",
+        "valor": "CO"
+      }
+    }
+  ]
+}
