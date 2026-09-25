@@ -5,7 +5,7 @@
         ],
         "target": {
             "namespace": "android_app",
-            "package_name": "com.radiolatina.app",
+            "package_name": "com.radiolatina.radio",
             "sha256_cert_fingerprints": [
                 "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82"
             ]
@@ -17,7 +17,7 @@
         ],
         "target": {
             "namespace": "android_app",
-            "package_name": "com.radiolatina.app.owner",
+            "package_name": "com.radiolatina.radio.owner",
             "sha256_cert_fingerprints": [
                 "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82"
             ]
