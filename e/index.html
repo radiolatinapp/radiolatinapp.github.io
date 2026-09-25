@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radio Latina — Abrir emisora</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f3ef; color: #171916; text-align: center; padding: 24px; }
+  .card { background: #fff; border-radius: 20px; padding: 36px 28px; box-shadow: 0 12px 40px rgba(0,0,0,.1); max-width: 380px; }
+  h1 { font-size: 1.3rem; margin: 0 0 .6rem; }
+  p { color: #666; font-size: .95rem; }
+  a.btn { display: inline-block; margin-top: 18px; background: #d34228; color: #fff; text-decoration: none; font-weight: 700; padding: 14px 28px; border-radius: 999px; }
+  a.btn:active { transform: scale(.97); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🎙️ Radio Latina</h1>
+  <p id="msg">Te invitaron a escuchar una emisora en Radio Latina.</p>
+  <a class="btn" id="open" href="#">Abrir en Radio Latina</a>
+  <p style="margin-top:16px;font-size:.8rem">¿No tienes la app? Búscala como <b>Radio Latina – Radio en vivo</b> en Google Play.</p>
+</div>
+<script>
+  // /e/<slug> → el botón apunta a esta misma URL https: cuando la app tenga
+  // su intent-filter verificado (1.9.6), Android ofrece abrirla directamente.
+  var slug = location.pathname.split("/").filter(Boolean).pop() || "";
+  var link = document.getElementById("open");
+  link.href = location.href;
+  var pretty = slug.replace(/-/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  if (pretty) document.getElementById("msg").textContent = "Te invitaron a escuchar " + pretty + " en Radio Latina.";
+</script>
+</body>
+</html>
