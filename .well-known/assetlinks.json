@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.radiolatina.app",
+    "sha256_cert_fingerprints": ["30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82"]
+  }
+}]
