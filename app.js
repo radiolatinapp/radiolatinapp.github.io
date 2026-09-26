@@ -366,8 +366,9 @@ function resolveAvisoAction(acc){
     if(!acc||!acc.tipo) return;
     var t=String(acc.tipo).toLowerCase(), v=String(acc.valor==null?'':acc.valor).trim(), i, s;
     if(t==='pais'&&v){
-      filters.country=v; filters.city=''; filters.genre=''; filters.favs=false;
-      el('fGenre').value='';
+      filters.country=v; filters.city=''; filters.genre=''; filters.favs=false; filters.q='';
+      el('fGenre').value=''; el('q').value='';
+      var ff=el('fFavs'); if(ff) ff.setAttribute('aria-pressed','false');
       syncCountryChips(); renderCities(v);
       go('radio'); applyFilters();
     } else if(t==='emisora'&&v){
@@ -396,7 +397,7 @@ function initCatalog(){
     var gc=el('genreChips');
     var topGenres=['General','Variada','Pop latino','Noticias','Tropical','Salsa','Rock','Regional','Romántica','80s'];
     gc.innerHTML=topGenres.map(function(g){return '<button class="chip" data-g="'+esc(g.toLowerCase())+'">'+esc(g)+'</button>';}).join('');
-    gc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ filters.genre=ch.getAttribute('data-g'); fg.value=filters.genre; go('radio'); applyFilters(); }); });
+    gc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ filters.country=''; filters.city=''; resetRefine(); filters.genre=ch.getAttribute('data-g'); fg.value=filters.genre; syncCountryChips(); renderCities(''); go('radio'); applyFilters(); }); });
     // destacadas
     var featNames=['Olímpica Stereo Armenia 96.1 FM','Caracol Radio Bogotá','LOS40 Cali','La Kalle Bogotá','Blu Radio','La Mejor 97.7 Ciudad de México','Radio Mitre Buenos Aires','BioBio Chile Santiago'];
     var feat=[];
@@ -409,12 +410,21 @@ function initCatalog(){
 }
 function countryCode(c){ var m={'Colombia':'CO','México':'MX','Argentina':'AR','Perú':'PE','Chile':'CL','República Dominicana':'DO','Puerto Rico':'PR','Ecuador':'EC','Venezuela':'VE','España':'ES','Estados Unidos':'US','Uruguay':'UY','Paraguay':'PY','Bolivia':'BO','Guatemala':'GT','El Salvador':'SV','Honduras':'HN','Nicaragua':'NI','Costa Rica':'CR','Panamá':'PA','Brasil':'BR','Cuba':'CU'}; return m[c]||''; }
 
+/* Limpia los refinamientos (género, favoritas, búsqueda) para que cada
+ * selección de país/ciudad/género empiece de cero y no se combine en silencio. */
+function resetRefine(){
+  filters.genre=''; filters.favs=false; filters.q='';
+  var fg=el('fGenre'); if(fg) fg.value='';
+  var q=el('q'); if(q) q.value='';
+  var ff=el('fFavs'); if(ff) ff.setAttribute('aria-pressed','false');
+}
 /* ---------- explorar país → ciudades ---------- */
 function syncCountryChips(){
   el('countryChips').querySelectorAll('.chip').forEach(function(x){ x.classList.toggle('active',x.getAttribute('data-c')===filters.country); });
 }
 function selectCountry(c){
   filters.country=c; filters.city='';
+  resetRefine();
   syncCountryChips(); renderCities(c); applyFilters();
 }
 function citiesOfCountry(country){
@@ -431,7 +441,7 @@ function renderCities(country){
   var cc=el('cityChips');
   cc.innerHTML='<button class="chip'+(filters.city?'':' active')+'" data-city="">Todas las ciudades</button>'+
     cities.map(function(c){ return '<button class="chip'+(filters.city===c.name?' active':'')+'" data-city="'+esc(c.name)+'">'+esc(c.name)+' · '+c.count+'</button>'; }).join('');
-  cc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ filters.city=ch.getAttribute('data-city'); renderCities(country); applyFilters(); }); });
+  cc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ filters.city=ch.getAttribute('data-city'); resetRefine(); renderCities(country); applyFilters(); }); });
   el('crumbClear').addEventListener('click',function(){
     if(filters.city){ filters.city=''; renderCities(country); applyFilters(); }
     else { selectCountry(''); }
