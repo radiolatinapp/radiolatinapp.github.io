@@ -7,7 +7,8 @@
             "namespace": "android_app",
             "package_name": "com.radiolatina.radio",
             "sha256_cert_fingerprints": [
-                "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82"
+                "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82",
+                "79:62:9D:A4:B4:34:DA:24:9D:98:F5:44:4B:57:D9:AB:F2:B3:61:18:2A:74:FD:56:3A:F0:FE:14:7B:18:E2:F8"
             ]
         }
     },
@@ -19,7 +20,8 @@
             "namespace": "android_app",
             "package_name": "com.radiolatina.radio.owner",
             "sha256_cert_fingerprints": [
-                "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82"
+                "30:D2:BE:65:83:1B:F1:C9:3B:D0:FA:28:50:EA:F7:75:46:0B:B6:38:63:AB:86:05:D7:83:8D:C8:08:70:34:82",
+                "79:62:9D:A4:B4:34:DA:24:9D:98:F5:44:4B:57:D9:AB:F2:B3:61:18:2A:74:FD:56:3A:F0:FE:14:7B:18:E2:F8"
             ]
         }
     }
