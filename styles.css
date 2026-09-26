@@ -306,3 +306,10 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 [data-theme="light"] .icon-btn:hover{background:rgba(20,20,30,.07)}
 [data-theme="light"] .pb-tool:hover{background:rgba(20,20,30,.07)}
 [data-theme="light"] .hero-logo{box-shadow:0 14px 34px rgba(20,20,30,.18),0 0 0 1px rgba(20,20,30,.08)}
+
+/* 1.9.22 (Tarea 2, B2): vincular premium en el modal */
+.link-code{margin:14px 0 4px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12);text-align:left}
+.link-code p{margin:6px 0}
+.link-row{display:flex;gap:8px;margin:8px 0}
+.link-row input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font-size:16px;letter-spacing:2px;text-transform:uppercase}
+.tiny{font-size:12px}

@@ -491,8 +491,12 @@ async function rlIsPremiumWeb(){
   if(premiumCache!==null) return premiumCache;
   premiumCache=false;
   try{ if(!(await ensureSignedIn())) return false;
-    var doc=await db.collection('premium_uids').doc(auth.currentUser.uid).get();
-    premiumCache=doc.exists;
+    /* 1.9.22 (Tarea 2, B2 - Tiger): la web verifica el uid VINCULADO (localStorage),
+     * no el anónimo del navegador (nunca coincide con el de la app). Lee el booleano. */
+    var linkUid=null; try{ linkUid=localStorage.getItem('rl_premium_uid'); }catch(e){}
+    if(!linkUid) return false;
+    var doc=await db.collection('premium_uids').doc(linkUid).get();
+    premiumCache=doc.exists&&doc.data().premium===true;
   }catch(e){ premiumCache=false; }
   return premiumCache;
 }
@@ -766,6 +770,27 @@ function openPremium(){ openModal('premiumModal'); }
 el('gatePremiumBtn').addEventListener('click',openPremium);
 el('infoPremiumBtn').addEventListener('click',openPremium);
 el('pmClose').addEventListener('click',function(){ closeModal('premiumModal'); });
+
+/* 1.9.22 (Tarea 2, B2 - Tiger): vincular compra premium de la app con código de 6 letras. */
+el('linkCodeBtn').addEventListener('click',async function(){
+  var msg=el('linkCodeMsg'); msg.hidden=false;
+  var code=((el('linkCodeInput').value)||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(code.length!==6){ msg.textContent='El código tiene 6 caracteres.'; return; }
+  msg.textContent='Verificando…';
+  try{
+    if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
+    await ensureSignedIn();
+    var d=await db.collection('premium_codes').doc(code).get();
+    if(!d.exists){ msg.textContent='Código no válido. Revísalo en la app.'; return; }
+    var uid=d.data().uid;
+    var p=await db.collection('premium_uids').doc(uid).get();
+    if(!p.exists||p.data().premium!==true){ msg.textContent='Ese código ya no es premium.'; return; }
+    try{ localStorage.setItem('rl_premium_uid',uid); }catch(e){}
+    premiumCache=true;
+    msg.textContent='✅ Premium vinculado. Ya puedes enviar mensajes privados.';
+    toast('👑 Premium vinculado');
+  }catch(e){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; }
+});
 
 /* ---------- arranque del chat ---------- */
 async function initChat(){

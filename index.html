@@ -309,6 +309,15 @@
       <li>Apoya a la radio latina independiente</li>
     </ul>
     <p class="price">Compra única · <b>USD 2.50</b> · para siempre</p>
+    <div class="link-code">
+      <p class="muted">¿Ya compraste Premium en la app? Vincúlala aquí:</p>
+      <div class="link-row">
+        <input id="linkCodeInput" maxlength="6" placeholder="Código de 6 letras" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button class="btn btn-primary" id="linkCodeBtn">Vincular</button>
+      </div>
+      <p class="muted tiny">Tu código está en la app: Ajustes → Premium → "Tu código para la web".</p>
+      <p id="linkCodeMsg" class="tiny" hidden></p>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="pmClose">Cerrar</button>
       <a class="btn btn-primary" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar la app</a>
