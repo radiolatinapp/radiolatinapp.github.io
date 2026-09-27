@@ -456,7 +456,7 @@ el('heroSearchGo').addEventListener('click',heroGo);
 el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') heroGo(); });
 
 /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
-var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, chatStarted=false;
+var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, fbInitPromise=null, chatStarted=false;
 var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
 var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
 var unsub=null, roomUnsub=null, currentRoom=null;
@@ -467,11 +467,13 @@ var PAISES=[['AF','Afganistán'],['AL','Albania'],['DE','Alemania'],['AD','Andor
 
 function fbInit(){
   if(fbReady) return Promise.resolve(true);
-  return fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
-    firebase.initializeApp(cfg);
+  if(fbInitPromise) return fbInitPromise; /* race-safe 2026-09-27: un init en vuelo lo comparten todos (patrón signInPromise) */
+  fbInitPromise=fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
+    try{ firebase.initializeApp(cfg); }catch(e){ if(String((e&&e.code)||'').indexOf('duplicate-app')===-1) throw e; }
     auth=firebase.auth(); db=firebase.firestore(); storage=firebase.storage();
     fbReady=true; return true;
-  }).catch(function(){ toast('⚠️ No se pudo conectar con el chat.'); return false; });
+  }).catch(function(){ fbInitPromise=null; toast('⚠️ No se pudo conectar con el chat.'); return false; });
+  return fbInitPromise;
 }
 function ensureSignedIn(){
   if(!fbReady) return Promise.resolve(false);
@@ -1045,6 +1047,10 @@ renderHistoryRow();
 /* ===== PODCASTS v1 — Espacio Podcasts aditivo (portal). Luz verde de Tiger 2026-09-27 ~02:22.
    Fix scope 2026-09-27 ~05:50 (causa raíz de Tiger): el bloque vive DENTRO del IIFE principal;
    antes era un IIFE hermano donde fbInit/db no existían -> ReferenceError tragado por el catch.
+   Fix race fbInit 2026-09-27 (hipótesis de Tiger, verificada en el código): fbInit race-safe con promesa en
+   vuelo (espeja el patrón signInPromise: "si hay un init en curso, devolverla") + cinturón contra duplicate-app;
+   la promesa se reinicia en el catch para permitir reintento real; podLoaded=true solo tras éxito, así un
+   fallo transitorio reintenta al siguiente clic en vez de dejar la sección en 0 para siempre.
    100% aditivo: no toca radio/chat/emisoras/premium. Logo D2 Rosa Fuego elegido por Jeremy.
    Datos: colección Firestore `podcasts` (solo aprobado==true). Sin aprobados -> estado vacío con CTA. NADA inventado.
    Plan Spark (sin Storage): portadas por URL (igual que logos de emisoras). Reglas Firestore: preparadas aparte,
@@ -1110,7 +1116,7 @@ renderHistoryRow();
   }
 
   async function loadPodcasts(){
-    if(podLoaded) return; podLoaded=true;
+    if(podLoaded) return;
     renderPodChips();
     try{
       if(!(await fbInit())) throw new Error('sin conexión');
@@ -1118,6 +1124,7 @@ renderHistoryRow();
       PODCASTS=[];
       snap.forEach(function(d){ var x=d.data()||{}; x.id=d.id; PODCASTS.push(x); });
       PODCASTS.sort(function(a,b){ return String(a.titulo||'').localeCompare(String(b.titulo||'')); });
+      podLoaded=true; /* solo tras éxito: un fallo transitorio reintenta al siguiente clic (race fbInit 2026-09-27) */
     }catch(e){ if(window.console&&console.error)console.error('[podcasts] loadPodcasts:',e); PODCASTS=[]; }
     applyPodFilters();
   }
