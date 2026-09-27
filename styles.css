@@ -378,3 +378,6 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 #rlPremiumOverlay.rl-ov-out{opacity:0;transition:opacity .3s}
 @media(max-width:560px){.rl-premium-badge{margin-left:6px;padding:5px 9px;font-size:11px}#rlPremiumOverlay .rl-ov-card{padding:28px 24px}#rlPremiumOverlay h2{font-size:22px}}
 
+
+/* Susurro premium en el chat general */
+.chat-susurro-tag{font-size:11px;color:#f5c542;margin-left:8px;font-weight:600;white-space:nowrap;}
