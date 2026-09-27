@@ -511,14 +511,19 @@ function msgHTML(d, mine){
   var time=formatTime(data.createdAt);
   var flag=data.pais?flagEmoji(String(data.pais))+' ':'';
   var sx=data.sexo?' '+sexIcon(String(data.sexo)):'';
-  var txt=data.texto||data.text||'';
+  /* Susurro premium: solo autor y destinatario ven el texto real */
+  var esSusurro=!!data.esSusurro, paraNick=data.susurroPara||'';
+  var puedoVer=!esSusurro||isOwn||paraNick===mine;
+  var txt=puedoVer?(data.texto||data.text||''):'🔒 Mensaje privado';
+  var susTag=esSusurro?'<span class="chat-susurro-tag">🔒 '+(puedoVer?('Privado · '+esc(paraNick)):'Privado')+'</span>':'';
   var acts='';
   if(d._room==='general'){
     acts='<div class="chat-msg-actions"><button class="chat-flag" data-action="report" data-id="'+esc(d.id)+'" data-nick="'+esc(nick)+'">Reportar</button>'+
       '<button class="chat-flag" data-action="invite">Invitar</button>'+
-      (isOwn?'':'<button class="chat-flag" data-action="block" data-nick="'+esc(nick)+'">Bloquear</button>')+'</div>';
+      (isOwn?'':'<button class="chat-flag" data-action="block" data-nick="'+esc(nick)+'">Bloquear</button>')+
+      (isOwn?'':'<button class="chat-flag" data-action="whisper" data-nick="'+esc(nick)+'">🔒 Privado</button>')+'</div>';
   }
-  return '<div class="chat-msg'+(isOwn?' own':'')+'"><div class="chat-msg-head"><b><span class="avatar">'+esc(initials(nick))+'</span>'+flag+esc(nick)+sx+'</b>'+(time?'<span>'+esc(time)+'</span>':'')+'</div><p>'+esc(txt)+'</p>'+acts+'</div>';
+  return '<div class="chat-msg'+(isOwn?' own':'')+'"><div class="chat-msg-head"><b><span class="avatar">'+esc(initials(nick))+'</span>'+flag+esc(nick)+sx+'</b>'+(time?'<span>'+esc(time)+'</span>':'')+susTag+'</div><p>'+esc(txt)+'</p>'+acts+'</div>';
 }
 
 /* ---------- sala general ---------- */
