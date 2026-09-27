@@ -959,90 +959,6 @@ renderHistoryRow();
     }
   });
 })();
-})();
-
-(function(){
-  var a=document.getElementById('navAgrega');
-  if(!a) return;
-  a.addEventListener('click',function(e){
-    e.preventDefault();
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    var sec=document.getElementById('agrega-emisora');
-    if(sec) sec.classList.add('active');
-    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
-    a.classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-    if(window.fbInit) fbInit();
-  });
-})();
-
-/* ===== CONTADOR-ANIM v1: el número sube contando (0 -> N) al cargar =====
-   Pegar AL FINAL de app.js (una sola vez). 100% aditivo: solo observa el
-   #visitCount y anima cuando llega el número real. Si Firebase falla, no hace nada. */
-(function(){
-  var el=document.getElementById('visitCount');
-  if(!el||!('MutationObserver' in window)||!window.requestAnimationFrame) return;
-  var done=false;
-  function fmt(n){ try{return Number(n).toLocaleString('es-CO');}catch(e){return String(n);} }
-  function animate(to){
-    var t0=null,dur=1100;
-    function step(ts){
-      if(!t0) t0=ts;
-      var p=Math.min(1,(ts-t0)/dur),e=1-Math.pow(1-p,3);
-      el.innerHTML='\uD83D\uDC65 <b class="vc-num">'+fmt(Math.round(to*e))+'</b> visitas';
-      if(p<1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  }
-  new MutationObserver(function(){
-    if(done) return;
-    var m=el.textContent.match(/(\d[\d.]*)/);
-    if(m){ done=true; animate(parseInt(m[1].replace(/\./g,''),10)||0); }
-  }).observe(el,{childList:true,characterData:true,subtree:true});
-})();
-
-
-/* PREMIUM-UX v1 (JS) — Experiencia premium inmediata post-código. Pegar al FINAL de app.js (una sola vez). */
-(function(){
-  function applyPremiumTheme(){
-    if(document.body.classList.contains('rl-premium')) return;
-    document.body.classList.add('rl-premium');
-    if(!document.getElementById('rlPremiumBadge')){
-      var brand=document.querySelector('.topbar .brand');
-      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">👑 PREMIUM</span>');
-    }
-  }
-  function premiumWelcome(){
-    applyPremiumTheme();
-    try{ if(typeof closeModal==='function') closeModal('premiumModal'); }catch(e){}
-    if(document.getElementById('rlPremiumOverlay')) return;
-    var ov=document.createElement('div');
-    ov.id='rlPremiumOverlay';
-    ov.innerHTML='<div class="rl-ov-card"><span class="rl-ov-crown">👑</span><h2>¡Ya eres <span>Premium</span>!</h2><p>Tu código quedó vinculado en este navegador.</p><p>Ya puedes enviar mensajes privados en el chat.</p><div class="rl-ov-tap">Toca para continuar</div></div>';
-    function dismiss(){ if(!ov.parentNode) return; ov.classList.add('rl-ov-out'); setTimeout(function(){ ov.remove(); },320); }
-    ov.addEventListener('click',dismiss);
-    setTimeout(dismiss,4500);
-    document.body.appendChild(ov);
-  }
-  /* El handler existente escribe "Premium vinculado" en #linkCodeMsg al vincular: lo observamos. */
-  function watchLink(){
-    var msg=document.getElementById('linkCodeMsg');
-    if(!msg||!window.MutationObserver) return;
-    new MutationObserver(function(){
-      if(/premium vinculado/i.test(msg.textContent||'')) premiumWelcome();
-    }).observe(msg,{childList:true,characterData:true,subtree:true});
-  }
-  /* Al cargar: si ya había un código vinculado y sigue vigente, recuperar el tema premium. */
-  function restorePremium(){
-    try{
-      var uid=null; try{ uid=localStorage.getItem('rl_premium_uid'); }catch(e){}
-      if(!uid||typeof rlIsPremiumWeb!=='function') return;
-      rlIsPremiumWeb().then(function(ok){ if(ok) applyPremiumTheme(); }).catch(function(){});
-    }catch(e){}
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ watchLink(); restorePremium(); });
-  else { watchLink(); restorePremium(); }
-
 /* ===== PODCASTS v1 (dentro del IIFE principal: ve fbInit/db/toast/playStation) ===== */
 /* ===== PODCASTS v1 — Espacio Podcasts aditivo (portal). Luz verde de Tiger 2026-09-27 ~02:22.
    Fix scope 2026-09-27 ~05:50 (causa raíz de Tiger): el bloque vive DENTRO del IIFE principal;
@@ -1227,5 +1143,89 @@ renderHistoryRow();
       }catch(err){ msg.textContent='Error: '+(err&&err.message?err.message:'desconocido'); }
     });
   }
+
+})();
+
+(function(){
+  var a=document.getElementById('navAgrega');
+  if(!a) return;
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var sec=document.getElementById('agrega-emisora');
+    if(sec) sec.classList.add('active');
+    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+    a.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.fbInit) fbInit();
+  });
+})();
+
+/* ===== CONTADOR-ANIM v1: el número sube contando (0 -> N) al cargar =====
+   Pegar AL FINAL de app.js (una sola vez). 100% aditivo: solo observa el
+   #visitCount y anima cuando llega el número real. Si Firebase falla, no hace nada. */
+(function(){
+  var el=document.getElementById('visitCount');
+  if(!el||!('MutationObserver' in window)||!window.requestAnimationFrame) return;
+  var done=false;
+  function fmt(n){ try{return Number(n).toLocaleString('es-CO');}catch(e){return String(n);} }
+  function animate(to){
+    var t0=null,dur=1100;
+    function step(ts){
+      if(!t0) t0=ts;
+      var p=Math.min(1,(ts-t0)/dur),e=1-Math.pow(1-p,3);
+      el.innerHTML='\uD83D\uDC65 <b class="vc-num">'+fmt(Math.round(to*e))+'</b> visitas';
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  new MutationObserver(function(){
+    if(done) return;
+    var m=el.textContent.match(/(\d[\d.]*)/);
+    if(m){ done=true; animate(parseInt(m[1].replace(/\./g,''),10)||0); }
+  }).observe(el,{childList:true,characterData:true,subtree:true});
+})();
+
+
+/* PREMIUM-UX v1 (JS) — Experiencia premium inmediata post-código. Pegar al FINAL de app.js (una sola vez). */
+(function(){
+  function applyPremiumTheme(){
+    if(document.body.classList.contains('rl-premium')) return;
+    document.body.classList.add('rl-premium');
+    if(!document.getElementById('rlPremiumBadge')){
+      var brand=document.querySelector('.topbar .brand');
+      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">👑 PREMIUM</span>');
+    }
+  }
+  function premiumWelcome(){
+    applyPremiumTheme();
+    try{ if(typeof closeModal==='function') closeModal('premiumModal'); }catch(e){}
+    if(document.getElementById('rlPremiumOverlay')) return;
+    var ov=document.createElement('div');
+    ov.id='rlPremiumOverlay';
+    ov.innerHTML='<div class="rl-ov-card"><span class="rl-ov-crown">👑</span><h2>¡Ya eres <span>Premium</span>!</h2><p>Tu código quedó vinculado en este navegador.</p><p>Ya puedes enviar mensajes privados en el chat.</p><div class="rl-ov-tap">Toca para continuar</div></div>';
+    function dismiss(){ if(!ov.parentNode) return; ov.classList.add('rl-ov-out'); setTimeout(function(){ ov.remove(); },320); }
+    ov.addEventListener('click',dismiss);
+    setTimeout(dismiss,4500);
+    document.body.appendChild(ov);
+  }
+  /* El handler existente escribe "Premium vinculado" en #linkCodeMsg al vincular: lo observamos. */
+  function watchLink(){
+    var msg=document.getElementById('linkCodeMsg');
+    if(!msg||!window.MutationObserver) return;
+    new MutationObserver(function(){
+      if(/premium vinculado/i.test(msg.textContent||'')) premiumWelcome();
+    }).observe(msg,{childList:true,characterData:true,subtree:true});
+  }
+  /* Al cargar: si ya había un código vinculado y sigue vigente, recuperar el tema premium. */
+  function restorePremium(){
+    try{
+      var uid=null; try{ uid=localStorage.getItem('rl_premium_uid'); }catch(e){}
+      if(!uid||typeof rlIsPremiumWeb!=='function') return;
+      rlIsPremiumWeb().then(function(ok){ if(ok) applyPremiumTheme(); }).catch(function(){});
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ watchLink(); restorePremium(); });
+  else { watchLink(); restorePremium(); }
 
 })();
