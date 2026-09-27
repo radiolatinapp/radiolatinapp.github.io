@@ -456,7 +456,7 @@ el('heroSearchGo').addEventListener('click',heroGo);
 el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') heroGo(); });
 
 /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
-var auth=null, db=null, fbReady=false, signInPromise=null, chatStarted=false;
+var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, chatStarted=false;
 var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
 var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
 var unsub=null, roomUnsub=null, currentRoom=null;
@@ -469,7 +469,7 @@ function fbInit(){
   if(fbReady) return Promise.resolve(true);
   return fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
     firebase.initializeApp(cfg);
-    auth=firebase.auth(); db=firebase.firestore();
+    auth=firebase.auth(); db=firebase.firestore(); storage=firebase.storage();
     fbReady=true; return true;
   }).catch(function(){ toast('⚠️ No se pudo conectar con el chat.'); return false; });
 }
@@ -814,4 +814,63 @@ initCatalog();
 loadAvisos();
 renderResume();
 renderHistoryRow();
+})();
+/* BLOQUE 1B — Envío del formulario "Agrega tu emisora" (portal).
+   Pegar en app.js (o tu bundle JS del portal).
+   Requiere: db=firebase.firestore() y storage=firebase.storage() ya inicializados. */
+(function(){
+  var form=document.getElementById('ae-form');
+  if(!form) return;
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var msg=document.getElementById('ae-msg');
+    if(window.fbInit){ var _ok=await fbInit(); if(!_ok){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; } }
+    function v(id){ return document.getElementById(id).value.trim(); }
+    var url=v('ae-url');
+    if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(url)){
+      msg.textContent='Necesitamos el link de audio directo, no el del video.';
+      return;
+    }
+    msg.textContent='Subiendo...';
+    try{
+      var file=document.getElementById('ae-logo').files[0];
+      if(!file||file.type.indexOf('image/')!==0||file.size>2*1024*1024){
+        throw new Error('Logo inválido (imagen, máx 2MB).');
+      }
+      var id='p'+Date.now().toString(36);
+      var ref=storage.ref('logos_pendientes/'+id+'.png');
+      await ref.put(file);
+      var logo_url=await ref.getDownloadURL();
+      await db.collection('emisoras_pendientes').doc(id).set({
+        nombre:v('ae-nombre'),
+        stream_url:url,
+        logo_url:logo_url,
+        pais:v('ae-pais'),
+        ciudad:v('ae-ciudad'),
+        genero:v('ae-genero'),
+        estado:'pendiente',
+        creado:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      msg.textContent='¡Gracias! Tu emisora está en revisión.';
+      form.reset();
+    }catch(err){
+      msg.textContent='Error: '+(err&&err.message?err.message:'desconocido');
+    }
+  });
+})();
+
+/* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
+(function(){
+  var a=document.getElementById('navAgrega');
+  if(!a) return;
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var sec=document.getElementById('agrega-emisora');
+    if(sec) sec.classList.add('active');
+    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+    a.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.fbInit) fbInit();
+  });
 })();
