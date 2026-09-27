@@ -1042,3 +1042,182 @@ renderHistoryRow();
   else { watchLink(); restorePremium(); }
 })();
 
+
+/* ===== PODCASTS v1 — Espacio Podcasts aditivo (portal). Luz verde de Tiger 2026-09-27 ~02:22.
+   100% aditivo: no toca radio/chat/emisoras/premium. Logo D2 Rosa Fuego elegido por Jeremy.
+   Datos: colección Firestore `podcasts` (solo aprobado==true). Sin aprobados -> estado vacío con CTA. NADA inventado.
+   Plan Spark (sin Storage): portadas por URL (igual que logos de emisoras). Reglas Firestore: preparadas aparte,
+   NO publicadas sin el OK directo de Jeremy (límite duro acordado con Tiger).
+   Episodios: array `episodios` del doc (RSS parseado en la aprobación; refresco por script/Cloud Function).
+   La reproducción reutiliza el reproductor actual (fase 1). */
+(function(){
+  var PODCASTS=[], podQ='', podCat='';
+  var POD_CATS=['Todos','Noticias','Deportes','Historia','Humor','Música','Misterio','Otra'];
+  var D2='assets/logos/podcast-d2-rosa-fuego.svg';
+  var podLoaded=false;
+
+  function pel(id){ return document.getElementById(id); }
+  function pes(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function podInitials(t){ var w=String(t||'?').trim().split(/\s+/); return ((w[0]||'?').charAt(0)+(w[1]?w[1].charAt(0):'')).toUpperCase(); }
+
+  function podCardHTML(p){
+    var port=p.portada_url||'';
+    var cover=port
+      ? '<img src="'+pes(port)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;pod-fallback&quot;>'+pes(podInitials(p.titulo))+'</span>\'">'
+      : '<span class="pod-fallback">'+pes(podInitials(p.titulo))+'</span>';
+    var eps=(p.episodios&&p.episodios.length)?p.episodios.length:0;
+    var meta=eps?(eps+(eps===1?' episodio':' episodios')):'Próximamente';
+    return '<button class="pod-card" data-pod="'+pes(p.id)+'">'+
+      '<span class="pod-cover">'+cover+
+      '<span class="pod-play"><span class="pp">▶</span></span>'+
+      '<span class="pod-cat">'+pes(p.categoria||'Podcast')+'</span></span>'+
+      '<span class="pod-body"><b>'+pes(p.titulo)+'</b><small>'+pes(meta)+'</small></span>'+
+    '</button>';
+  }
+
+  function applyPodFilters(){
+    var q=podQ.trim().toLowerCase();
+    var list=PODCASTS.filter(function(p){
+      if(podCat&&podCat!=='Todos'&&String(p.categoria||'')!==podCat) return false;
+      if(q&&(String(p.titulo||'')+' '+String(p.descripcion||'')).toLowerCase().indexOf(q)===-1) return false;
+      return true;
+    });
+    var grid=pel('podGrid'), empty=pel('podEmpty');
+    if(!grid||!empty) return;
+    grid.innerHTML=list.map(podCardHTML).join('');
+    empty.hidden=list.length>0;
+    grid.querySelectorAll('.pod-card').forEach(function(c){
+      c.addEventListener('click',function(){ openPodDetail(c.getAttribute('data-pod')); });
+    });
+  }
+
+  function renderPodChips(){
+    var box=pel('podCatChips'); if(!box||box.dataset.podWired) return; box.dataset.podWired='1';
+    box.innerHTML='';
+    POD_CATS.forEach(function(c,i){
+      var b=document.createElement('button');
+      b.className='chip'+(i===0?' active':''); b.type='button'; b.textContent=c;
+      b.addEventListener('click',function(){
+        podCat=(c==='Todos')?'':c;
+        box.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        applyPodFilters();
+      });
+      box.appendChild(b);
+    });
+    var q=pel('pq');
+    if(q&&!q.dataset.podWired){ q.dataset.podWired='1'; q.addEventListener('input',function(){ podQ=q.value; applyPodFilters(); }); }
+  }
+
+  async function loadPodcasts(){
+    if(podLoaded) return; podLoaded=true;
+    renderPodChips();
+    try{
+      if(!(await fbInit())) throw new Error('sin conexión');
+      var snap=await db.collection('podcasts').where('aprobado','==',true).get();
+      PODCASTS=[];
+      snap.forEach(function(d){ var x=d.data()||{}; x.id=d.id; PODCASTS.push(x); });
+      PODCASTS.sort(function(a,b){ return String(a.titulo||'').localeCompare(String(b.titulo||'')); });
+    }catch(e){ PODCASTS=[]; }
+    applyPodFilters();
+  }
+
+  function openPodDetail(id){
+    var p=null; for(var i=0;i<PODCASTS.length;i++) if(PODCASTS[i].id===id) p=PODCASTS[i];
+    if(!p) return;
+    var d=pel('podDetail'); if(!d) return;
+    pel('pdCover').src=p.portada_url||D2;
+    pel('pdCover').onerror=function(){ this.onerror=null; this.src=D2; };
+    pel('pdTitle').textContent=p.titulo||'';
+    var eps=p.episodios||[];
+    pel('pdMeta').textContent=(p.categoria||'Podcast')+(eps.length?(' · '+eps.length+(eps.length===1?' episodio':' episodios')):'');
+    pel('pdDesc').textContent=p.descripcion||'';
+    var box=pel('pdEps'); box.innerHTML='';
+    if(!eps.length){ box.innerHTML='<p class="muted">Aún no hay episodios publicados para este podcast.</p>'; }
+    eps.forEach(function(ep,i){
+      var b=document.createElement('button');
+      b.className='pod-ep'; b.type='button';
+      b.innerHTML='<span class="ep-play">▶</span><span class="ep-info"><b>'+pes(ep.titulo||('Episodio '+(i+1)))+'</b><small>'+pes(ep.fecha||'')+(ep.duracion?(' · '+pes(ep.duracion)):'')+'</small></span>';
+      (function(ep2){ b.addEventListener('click',function(){ playPodcastEpisode(p,ep2); }); })(ep);
+      box.appendChild(b);
+    });
+    d.hidden=false;
+    d.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  /* Reutiliza el reproductor actual (fase 1): el episodio es audio directo. */
+  function playPodcastEpisode(p,ep){
+    playStation({
+      name:(p.titulo||'Podcast')+' · '+(ep.titulo||'Episodio'),
+      stream:ep.url,
+      logo:p.portada_url||'',
+      genre:'Podcast',
+      city:'',
+      country:p.categoria||'',
+      _podcast:true
+    });
+    toast('🎙️ Reproduciendo: '+(ep.titulo||'Episodio'));
+  }
+
+  /* Navegación: cargar podcasts al abrir la página */
+  document.querySelectorAll('[data-nav="podcasts"]').forEach(function(b){
+    b.addEventListener('click',function(){ loadPodcasts(); });
+  });
+  var pdc=pel('podDetailClose');
+  if(pdc) pdc.addEventListener('click',function(){ pel('podDetail').hidden=true; });
+
+  /* Página "Agrega tu podcast" (misma pauta que "Agrega tu emisora") */
+  function openAgregaPodcast(){
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var sec=pel('agrega-podcast'); if(sec) sec.classList.add('active');
+    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+    var a=pel('navAgregaPod'); if(a) a.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.fbInit) fbInit();
+  }
+  ['podGoAgrega','podGoAgrega2'].forEach(function(id){
+    var b=pel(id); if(b) b.addEventListener('click',openAgregaPodcast);
+  });
+  var nap=pel('navAgregaPod');
+  if(nap) nap.addEventListener('click',function(e){ e.preventDefault(); openAgregaPodcast(); });
+
+  /* Envío del formulario "Agrega tu podcast" (portal).
+     Colección: podcasts_pendientes (Jeremy aprueba en 1 clic desde Pendientes).
+     Plan Spark (sin Storage): portada por URL, igual que el logo de emisoras.
+     RSS preferido o MP3 directo; YouTube/Twitch/TikTok rechazados (orden de Jeremy). */
+  var form=pel('ap-form');
+  if(form&&!form.dataset.apWired){
+    form.dataset.apWired='1';
+    form.addEventListener('submit',async function(e){
+      e.preventDefault();
+      var msg=pel('ap-msg');
+      function v(id){ var x=pel(id); return x?x.value.trim():''; }
+      var feed=v('ap-rss');
+      if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(feed)){
+        msg.textContent='Necesitamos el link del RSS o del MP3 directo, no el del video.';
+        return;
+      }
+      var port=v('ap-portada-url');
+      if(port&&!/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(port)){
+        msg.textContent='La URL de la portada no parece una imagen válida.';
+        return;
+      }
+      msg.textContent='Enviando...';
+      try{
+        if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
+        var id='pod'+Date.now().toString(36);
+        await db.collection('podcasts_pendientes').doc(id).set({
+          titulo:v('ap-titulo'),
+          rss_url:feed,
+          portada_url:port||'',
+          categoria:v('ap-categoria'),
+          descripcion:v('ap-descripcion'),
+          estado:'pendiente',
+          creado:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        msg.textContent='¡Gracias! Tu podcast está en revisión.';
+        form.reset();
+      }catch(err){ msg.textContent='Error: '+(err&&err.message?err.message:'desconocido'); }
+    });
+  }
+})();
