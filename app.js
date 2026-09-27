@@ -821,14 +821,15 @@ renderHistoryRow();
   try{
     var el = document.getElementById('visitCount');
     if(!el || !window.firebase || !firebase.firestore) return;
-    var FV = firebase.firestore.FieldValue;
     var ref = firebase.firestore().doc('estadisticas/visitas');
-    ref.set({total: FV.increment(1)}, {merge:true})
-      .then(function(){ return ref.get(); })
-      .then(function(s){
-        var t = s.exists ? (s.data().total || 0) : 0;
-        el.textContent = '👥 ' + Number(t).toLocaleString('es-CO') + ' visitas';
-      })
-      .catch(function(){});
+    /* La regla Firestore solo permite: crear con total==1, o actualizar con total==anterior+1.
+       Por eso se lee primero y se escribe el valor literal (sin FieldValue.increment). */
+    ref.get().then(function(s){
+      if(!s.exists){ return ref.set({total: 1}).then(function(){ return 1; }); }
+      var t = (s.data().total || 0) + 1;
+      return ref.update({total: t}).then(function(){ return t; });
+    }).then(function(t){
+      el.textContent = '👥 ' + Number(t).toLocaleString('es-CO') + ' visitas';
+    }).catch(function(){});
   }catch(e){}
 })();
