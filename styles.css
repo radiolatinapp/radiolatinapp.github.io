@@ -259,7 +259,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .modal-card input:focus,.modal-card select:focus{border-color:rgba(225,29,72,.6)}
 .modal-card select option{background:#17171f}
 .ae-form select option{background:#17171f;color:#fff}
-[data-theme="light"] .ae-form select option{background:#ffffff;color:#16161d}
+[data-theme="light"].ae-form select option{background:#ffffff;color:#16161d}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
 
