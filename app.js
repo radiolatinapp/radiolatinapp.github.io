@@ -1118,7 +1118,7 @@ renderHistoryRow();
       PODCASTS=[];
       snap.forEach(function(d){ var x=d.data()||{}; x.id=d.id; PODCASTS.push(x); });
       PODCASTS.sort(function(a,b){ return String(a.titulo||'').localeCompare(String(b.titulo||'')); });
-    }catch(e){ PODCASTS=[]; }
+    }catch(e){ if(window.console&&console.error)console.error('[podcasts] loadPodcasts:',e); PODCASTS=[]; }
     applyPodFilters();
   }
 
