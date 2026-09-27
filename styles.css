@@ -387,9 +387,9 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .station-art img{width:76%!important;height:76%!important}
 .genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
 .station-info b{display:none}
-.station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:#fff;white-space:nowrap}
+.station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:var(--ink);white-space:nowrap}
 .live-pill{display:block;text-align:center;font-size:.85rem;color:#00E676;text-shadow:0 0 8px rgba(0,230,118,.8);margin-top:2px}
 @keyframes livePulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.12);opacity:1}}
 
 /* Auditoría Tiger 2026-09-27 01:37: antena EN VIVO verde fluorescente, en bloque centrada DEBAJO de la ciudad */
-.station-info .live-pill{position:static;display:block;text-align:center;color:#00E676!important;text-shadow:0 0 8px rgba(0,230,118,.8);margin-top:2px;font-size:1rem;line-height:1.4;background:none;padding:0;animation:livePulse 2.4s ease-in-out infinite}
+.station-info .live-pill{position:static;display:block;text-align:center;color:#00E676!important;text-shadow:0 0 8px rgba(0,230,118,.8);margin-top:2px;font-size:.9rem;line-height:1.4;background:none;padding:0;animation:livePulse 2.4s ease-in-out infinite}
