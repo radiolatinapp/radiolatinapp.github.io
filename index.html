@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260927d">
+<link rel="stylesheet" href="styles.css?v=20260927e">
 <link rel="icon" type="image/png" href="assets/logos/d1-logo-512.png">
 <link rel="apple-touch-icon" href="assets/logos/d1-logo-512.png">
 <script>try{var _t=localStorage.getItem('rl_theme');if(_t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(_t!=='dark'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.setAttribute('data-theme','light');}}catch(_e){}</script>
@@ -30,9 +30,11 @@
   <nav class="topnav">
     <button data-nav="inicio" class="navlink active">Inicio</button>
     <button data-nav="radio" class="navlink">Radio en vivo</button>
+    <button data-nav="podcasts" class="navlink">🎙️ Podcasts</button>
     <button data-nav="chat" class="navlink">Chat</button>
     <button data-nav="info" class="navlink">Info</button>
     <a href="#agrega-emisora" class="navlink" id="navAgrega">➕ Agrega tu emisora</a>
+    <a href="#agrega-podcast" class="navlink" id="navAgregaPod">🎙️ Agrega tu podcast</a>
   </nav>
   <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema" title="Día / noche">🌙</button>
   <a class="btn btn-primary btn-sm" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar app</a>
@@ -122,6 +124,43 @@
     <div id="grid" class="cards-grid"></div>
     <div class="more-wrap"><button id="gridMore" class="btn btn-ghost" hidden>Ver más</button></div>
     <div id="gridEmpty" class="empty" hidden>No encontramos emisoras con ese filtro. Prueba con otra búsqueda. 🔍</div>
+  </section>
+
+  <!-- ============ PODCASTS ============ -->
+  <section id="sec-podcasts" class="page">
+    <div class="pod-hero">
+      <img class="pod-hero-logo" src="assets/logos/podcast-d2-rosa-fuego.svg" alt="Podcasts" width="88" height="88">
+      <div>
+        <h2>🎙️ Podcasts</h2>
+        <p class="muted">Podcasts latinos con su portada real, episodio por episodio.</p>
+      </div>
+    </div>
+    <div class="toolbar glass">
+      <div class="toolbar-search">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="pq" type="search" placeholder="Buscar podcast…" autocomplete="off">
+      </div>
+    </div>
+    <div id="podCatChips" class="chips scroll-x"></div>
+    <div id="podGrid" class="pod-grid"></div>
+    <div id="podEmpty" class="empty" hidden>
+      Aún no hay podcasts publicados. ¿Tienes el tuyo? Envíalo y lo revisamos. 🎙️<br><br>
+      <button class="btn btn-primary" id="podGoAgrega">🎙️ Agrega tu podcast</button>
+    </div>
+    <div class="more-wrap"><button class="linklike" id="podGoAgrega2">🎙️ ¿Tienes un podcast? Agrégalo aquí →</button></div>
+    <div id="podDetail" class="pod-detail glass" hidden>
+      <button id="podDetailClose" class="icon-btn" title="Cerrar">✕</button>
+      <div class="pod-detail-head">
+        <img id="pdCover" alt="">
+        <div>
+          <h3 id="pdTitle"></h3>
+          <p id="pdMeta" class="muted" style="margin:0"></p>
+          <p id="pdDesc" class="pod-desc"></p>
+        </div>
+      </div>
+      <h4>Episodios</h4>
+      <div id="pdEps" class="pod-eps"></div>
+    </div>
   </section>
 
   <!-- ============ CHAT ============ -->
@@ -521,11 +560,35 @@
       <p id="ae-msg" role="status"></p>
     </form>
   </section>
+
+  <section id="agrega-podcast" class="page ae-wrap">
+    <div class="page-title"><h2>🎙️ Agrega tu podcast</h2></div>
+    <p class="ae-sub">Tu podcast en Radio Latina: en la web y en la app. Solo el feed RSS o el MP3 directo del episodio — nada inventado.</p>
+    <form id="ap-form" class="ae-form glass">
+      <input id="ap-titulo" type="text" required maxlength="80" placeholder="Título del podcast *">
+      <input id="ap-rss" type="url" required placeholder="Link del RSS o del MP3 directo *">
+      <input id="ap-portada-url" type="url" placeholder="URL de la portada (la foto de perfil real de tu podcast)">
+      <select id="ap-categoria" required>
+        <option value="">Categoría *</option>
+        <option value="Noticias">Noticias</option>
+        <option value="Deportes">Deportes</option>
+        <option value="Historia">Historia</option>
+        <option value="Humor">Humor</option>
+        <option value="Música">Música</option>
+        <option value="Misterio">Misterio</option>
+        <option value="Otra">Otra</option>
+      </select>
+      <textarea id="ap-descripcion" rows="3" maxlength="400" placeholder="Descripción corta (opcional)"></textarea>
+      <button type="submit">Enviar para revisión</button>
+      <p id="ap-msg" role="status"></p>
+    </form>
+  </section>
 </main>
 
 <nav class="bottomnav glass" aria-label="Navegación principal">
   <button data-nav="inicio" class="bnav active"><span>🏠</span><small>Inicio</small></button>
   <button data-nav="radio" class="bnav"><span>📻</span><small>Radio</small></button>
+  <button data-nav="podcasts" class="bnav"><span>🎙️</span><small>Podcasts</small></button>
   <button data-nav="chat" class="bnav"><span>💬</span><small>Chat</small></button>
   <button data-nav="info" class="bnav"><span>ℹ️</span><small>Info</small></button>
 </nav>
@@ -611,6 +674,6 @@
 <div id="toast" class="toast" role="status"></div>
 <audio id="audio" preload="none"></audio>
 <script src="ads-badge.js"></script>
-<script src="app.js?v=20260927d"></script>
+<script src="app.js?v=20260927e"></script>
 </body>
 </html>
