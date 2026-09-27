@@ -456,7 +456,7 @@ el('heroSearchGo').addEventListener('click',heroGo);
 el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') heroGo(); });
 
 /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
-var auth=null, db=null, fbReady=false, signInPromise=null, chatStarted=false;
+var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, chatStarted=false;
 var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
 var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
 var unsub=null, roomUnsub=null, currentRoom=null;
