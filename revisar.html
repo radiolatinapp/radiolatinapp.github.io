@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<!-- BLOQUE 2 — Pantalla "Pendientes" (admin).
+     Subir como revisar.html al portal. NO ENLAZAR desde ninguna página pública.
+     Requiere las reglas Firestore del spec 1.9.28 (pendientes/comunitarias).
+     Pendejito: crear en Firebase console → Authentication el usuario
+     ricomoralesjeremy@gmail.com (password temporal, Jeremy la cambia aquí). -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisar pendientes — Radio Latina</title>
+<!-- PEGA AQUÍ los mismos SDK (app, auth, firestore) con la MISMA versión de tu index.html -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:16px}
+h1{font-size:20px}.card{background:#1c1c1c;border-radius:12px;padding:16px;max-width:420px;margin:40px auto}
+input{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #444;background:#222;color:#eee;box-sizing:border-box}
+button{padding:10px 14px;border-radius:8px;border:0;background:#E11D48;color:#fff;font-weight:600;cursor:pointer;margin:4px 4px 0 0}
+button.sec{background:#333}.pend{display:flex;gap:12px;background:#1c1c1c;border-radius:12px;padding:12px;margin:10px 0;align-items:center;flex-wrap:wrap}
+.pend img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#333}
+.pend-info{flex:1;min-width:200px}.pend-info small{color:#999;word-break:break-all}
+#app-view{display:none}.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+#pw-form{margin-top:24px;max-width:420px}#pw-form input{max-width:200px}
+.msg{min-height:20px;color:#ffb3c0}
+</style>
+</head>
+<body>
+
+<div id="login-view" class="card">
+  <h1>🔐 Revisar pendientes</h1>
+  <form id="login-form">
+    <input id="li-email" type="email" required placeholder="Correo">
+    <input id="li-pass" type="password" required placeholder="Contraseña">
+    <button type="submit">Ingresar</button>
+    <p id="li-msg" class="msg"></p>
+  </form>
+</div>
+
+<div id="app-view">
+  <div class="topbar">
+    <h1>📻 Emisoras pendientes</h1>
+    <div><button id="reload" class="sec">↻ Recargar</button><button id="logout" class="sec">Salir</button></div>
+  </div>
+  <div id="lista"></div>
+  <form id="pw-form">
+    <h3>Cambiar contraseña</h3>
+    <input id="pw1" type="password" required placeholder="Nueva contraseña">
+    <input id="pw2" type="password" required placeholder="Repetir">
+    <button type="submit" class="sec">Cambiar</button>
+    <p id="pw-msg" class="msg"></p>
+  </form>
+</div>
+
+<script>
+/* PEGA AQUÍ tu firebaseConfig (el mismo del portal) */
+var firebaseConfig = { {"apiKey":"AIzaSyDxEmxAOsOq1m0ayfv0VHuqzqDO_CfUS6w","appId":"1:518410253851:web:af1a0fbe603c6e236e2abe","authDomain":"radio-latina-a685e.firebaseapp.com","messagingSenderId":"518410253851","projectId":"radio-latina-a685e","storageBucket":"radio-latina-a685e.firebasestorage.app"} };
+firebase.initializeApp(firebaseConfig);
+var auth=firebase.auth(), db=firebase.firestore();
+var ADMIN_EMAIL='ricomoralesjeremy@gmail.com';
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+document.getElementById('login-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var m=document.getElementById('li-msg'); m.textContent='Ingresando...';
+  try{ await auth.signInWithEmailAndPassword(
+    document.getElementById('li-email').value.trim(),
+    document.getElementById('li-pass').value); }
+  catch(err){ m.textContent='Error: '+err.message; }
+});
+
+auth.onAuthStateChanged(function(user){
+  var ok=user&&user.email===ADMIN_EMAIL;
+  document.getElementById('login-view').style.display=ok?'none':'block';
+  document.getElementById('app-view').style.display=ok?'block':'none';
+  if(ok) cargarPendientes();
+});
+document.getElementById('logout').onclick=function(){ auth.signOut(); };
+document.getElementById('reload').onclick=function(){ cargarPendientes(); };
+
+async function cargarPendientes(){
+  var cont=document.getElementById('lista'); cont.innerHTML='Cargando...';
+  try{
+    var snap=await db.collection('emisoras_pendientes').where('estado','==','pendiente').get();
+    if(snap.empty){ cont.innerHTML='<p>No hay pendientes. 🎉</p>'; return; }
+    var docs=snap.docs.slice().sort(function(a,b){
+      var ta=a.data().creado, tb=b.data().creado;
+      var ma=ta&&ta.toMillis?ta.toMillis():0, mb=tb&&tb.toMillis?tb.toMillis():0;
+      return mb-ma;
+    });
+    cont.innerHTML='';
+    docs.forEach(function(doc){
+      var e=doc.data();
+      var div=document.createElement('div'); div.className='pend';
+      div.innerHTML=
+        '<img src="'+esc(e.logo_url)+'" onerror="this.style.display=\'none\'">'+
+        '<div class="pend-info"><b>'+esc(e.nombre)+'</b><br>'+
+        esc(e.ciudad)+', '+esc(e.pais)+' · '+esc(e.genero)+'<br>'+
+        '<small>'+esc(e.stream_url)+'</small></div>'+
+        '<div><button data-act="probar" class="sec">▶ Probar</button>'+
+        '<button data-act="aprobar">✅ Aprobar</button>'+
+        '<button data-act="rechazar" class="sec">❌ Rechazar</button></div>';
+      div.querySelector('[data-act="probar"]').onclick=function(){ probar(e.stream_url); };
+      div.querySelector('[data-act="aprobar"]').onclick=function(){ aprobar(doc.id,e,div); };
+      div.querySelector('[data-act="rechazar"]').onclick=function(){ rechazar(doc.id,div); };
+      cont.appendChild(div);
+    });
+  }catch(err){ cont.innerHTML='Error: '+esc(err.message); }
+}
+
+var audioActual=null;
+function probar(url){
+  if(audioActual){ audioActual.pause(); audioActual=null; return; }
+  audioActual=new Audio(url);
+  audioActual.play().catch(function(err){ alert('No se pudo reproducir: '+err.message); audioActual=null; });
+}
+
+async function aprobar(id,e,div){
+  if(!confirm('¿Aprobar "'+e.nombre+'"? Quedará al aire en web y app.')) return;
+  try{
+    var batch=db.batch();
+    batch.set(db.collection('emisoras_comunitarias').doc(id),{
+      nombre:e.nombre, stream_url:e.stream_url, logo_url:e.logo_url,
+      pais:e.pais, ciudad:e.ciudad, genero:e.genero, estado:'activa',
+      aprobada_en:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.delete(db.collection('emisoras_pendientes').doc(id));
+    await batch.commit();
+    div.remove();
+  }catch(err){ alert('Error: '+err.message); }
+}
+
+async function rechazar(id,div){
+  if(!confirm('¿Rechazar esta propuesta? No se publicará.')) return;
+  try{
+    await db.collection('emisoras_pendientes').doc(id).update({estado:'rechazada'});
+    div.remove();
+  }catch(err){ alert('Error: '+err.message); }
+}
+
+document.getElementById('pw-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var u=auth.currentUser; if(!u) return;
+  var p1=document.getElementById('pw1').value, p2=document.getElementById('pw2').value;
+  var m=document.getElementById('pw-msg');
+  if(p1!==p2||p1.length<6){ m.textContent='Deben coincidir y tener 6+ caracteres.'; return; }
+  try{ await u.updatePassword(p1); m.textContent='Contraseña actualizada.'; e.target.reset(); }
+  catch(err){ m.textContent='Error: '+err.message+' (vuelve a ingresar si pide re-autenticación).'; }
+});
+</script>
+</body>
+</html>
