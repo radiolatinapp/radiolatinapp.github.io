@@ -456,7 +456,7 @@ el('heroSearchGo').addEventListener('click',heroGo);
 el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') heroGo(); });
 
 /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
-var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, chatStarted=false;
+var auth=null, db=null, fbReady=false, signInPromise=null, chatStarted=false;
 var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
 var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
 var unsub=null, roomUnsub=null, currentRoom=null;
@@ -469,7 +469,7 @@ function fbInit(){
   if(fbReady) return Promise.resolve(true);
   return fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
     firebase.initializeApp(cfg);
-    auth=firebase.auth(); db=firebase.firestore(); storage=firebase.storage();
+    auth=firebase.auth(); db=firebase.firestore();
     fbReady=true; return true;
   }).catch(function(){ toast('⚠️ No se pudo conectar con el chat.'); return false; });
 }
@@ -815,74 +815,20 @@ loadAvisos();
 renderResume();
 renderHistoryRow();
 })();
-/* BLOQUE 1B v2 — Envío del formulario "Agrega tu emisora" (portal).
-   v2: funciona en plan Spark (sin bucket). El logo es best-effort:
-   - Si hay archivo: intenta subirlo; si la subida falla, continúa sin logo.
-   - Si el dueño pegó URL de logo: se usa tal cual (validada).
-   - logo_url puede quedar '' → la app/portal muestran un placeholder.
-   Requiere: db=firebase.firestore() inicializado. */
-(function(){
-  var form=document.getElementById('ae-form');
-  if(!form) return;
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    var msg=document.getElementById('ae-msg');
-    function v(id){ return document.getElementById(id).value.trim(); }
-    var url=v('ae-url');
-    if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(url)){
-      msg.textContent='Necesitamos el link de audio directo, no el del video.';
-      return;
-    }
-    var logoUrl=v('ae-logo-url');
-    if(logoUrl && !/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(logoUrl)){
-      msg.textContent='La URL del logo no parece una imagen válida.';
-      return;
-    }
-    msg.textContent='Enviando...';
-    try{
-      var id='p'+Date.now().toString(36);
-      var file=document.getElementById('ae-logo').files[0];
-      if(file && typeof storage!=='undefined'){
-        if(file.type.indexOf('image/')!==0||file.size>2*1024*1024){
-          throw new Error('Logo inválido (imagen, máx 2MB).');
-        }
-        try{
-          var ref=storage.ref('logos_pendientes/'+id+'.png');
-          await ref.put(file);
-          logoUrl=await ref.getDownloadURL();
-        }catch(upErr){ /* Sin bucket (Spark): se continúa sin logo subido */ }
-      }
-      await db.collection('emisoras_pendientes').doc(id).set({
-        nombre:v('ae-nombre'),
-        stream_url:url,
-        logo_url:logoUrl||'',
-        pais:v('ae-pais'),
-        ciudad:v('ae-ciudad'),
-        genero:v('ae-genero'),
-        estado:'pendiente',
-        creado:firebase.firestore.FieldValue.serverTimestamp()
-      });
-      msg.textContent='¡Gracias! Tu emisora está en revisión.';
-      form.reset();
-    }catch(err){
-      msg.textContent='Error: '+(err&&err.message?err.message:'desconocido');
-    }
-  });
-})();
 
-
-/* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
+/* Contador de visitas del portal (footer) */
 (function(){
-  var a=document.getElementById('navAgrega');
-  if(!a) return;
-  a.addEventListener('click',function(e){
-    e.preventDefault();
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    var sec=document.getElementById('agrega-emisora');
-    if(sec) sec.classList.add('active');
-    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
-    a.classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-    if(window.fbInit) fbInit();
-  });
+  try{
+    var el = document.getElementById('visitCount');
+    if(!el || !window.firebase || !firebase.firestore) return;
+    var FV = firebase.firestore.FieldValue;
+    var ref = firebase.firestore().doc('estadisticas/visitas');
+    ref.set({total: FV.increment(1)}, {merge:true})
+      .then(function(){ return ref.get(); })
+      .then(function(s){
+        var t = s.exists ? (s.data().total || 0) : 0;
+        el.textContent = '👥 ' + Number(t).toLocaleString('es-CO') + ' visitas';
+      })
+      .catch(function(){});
+  }catch(e){}
 })();
