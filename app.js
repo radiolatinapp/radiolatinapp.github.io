@@ -814,41 +814,28 @@ initCatalog();
 loadAvisos();
 renderResume();
 renderHistoryRow();
-})();
 
-/* Contador de visitas del portal (footer) */
+/* Contador de visitas del portal (footer). Va DENTRO del IIFE principal:
+   usa fbInit()/db (no son globales). */
 (function(){
   try{
     var el = document.getElementById('visitCount');
-    if(!el || !window.firebase || !firebase.firestore) return;
-    var ref = firebase.firestore().doc('estadisticas/visitas');
-    /* La regla Firestore solo permite: crear con total==1, o actualizar con total==anterior+1.
-       Por eso se lee primero y se escribe el valor literal (sin FieldValue.increment). */
-    ref.get().then(function(s){
-      if(!s.exists){ return ref.set({total: 1}).then(function(){ return 1; }); }
-      var t = (s.data().total || 0) + 1;
-      return ref.update({total: t}).then(function(){ return t; });
-    }).then(function(t){
-      el.textContent = '👥 ' + Number(t).toLocaleString('es-CO') + ' visitas';
-    }).catch(function(){});
+    if(!el || !window.firebase) return;
+    fbInit().then(function(ok){
+      if(!ok || !db) return;
+      var ref = db.doc('estadisticas/visitas');
+      /* La regla Firestore solo permite: crear con total==1, o actualizar con total==anterior+1.
+         Por eso se lee primero y se escribe el valor literal (sin FieldValue.increment). */
+      ref.get().then(function(s){
+        if(!s.exists){ return ref.set({total: 1}).then(function(){ return 1; }); }
+        var t = (s.data().total || 0) + 1;
+        return ref.update({total: t}).then(function(){ return t; });
+      }).then(function(t){
+        el.textContent = '\uD83D\uDC65 ' + Number(t).toLocaleString('es-CO') + ' visitas';
+      }).catch(function(){});
+    });
   }catch(e){}
 })();
-/* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
-(function(){
-  var a=document.getElementById('navAgrega');
-  if(!a) return;
-  a.addEventListener('click',function(e){
-    e.preventDefault();
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    var sec=document.getElementById('agrega-emisora');
-    if(sec) sec.classList.add('active');
-    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
-    a.classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-    if(window.fbInit) fbInit();
-  });
-})();
-
 
 /* BLOQUE 1B v3 — Envío del formulario "Agrega tu emisora" (portal).
    Pegar AL FINAL de app.js (una sola vez).
@@ -900,5 +887,21 @@ renderHistoryRow();
     }catch(err){
       msg.textContent='Error: '+(err&&err.message?err.message:'desconocido');
     }
+  });
+})();
+})();
+
+(function(){
+  var a=document.getElementById('navAgrega');
+  if(!a) return;
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var sec=document.getElementById('agrega-emisora');
+    if(sec) sec.classList.add('active');
+    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+    a.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.fbInit) fbInit();
   });
 })();
