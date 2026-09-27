@@ -1,19 +1,36 @@
 ========================================================================
-DIFF COMPLETO 1.9.27 -> 1.9.28 - Revision pre-1.9.28 para Tiger
+DIFF COMPLETO 1.9.27 -> 1.9.28 - Revision pre-1.9.28 para Tiger (REGENERADO)
 ========================================================================
 
-Preparado por Pendejito el 2026-09-27 ~12:00 EDT por orden de amo Jeremy Rico
-("dale con el diff"). Formato: archivo + URL cruda https entre comillas simples.
+Preparado por Pendejito el 2026-09-27 ~12:45 p.m. EDT por orden de amo Jeremy Rico.
+REGENERACION COMPLETA: reemplaza integramente la version anterior (~12:00 EDT),
+que mezclaba un diff viejo de la app con un anexo narrativo. Esta version muestra
+CODIGO REAL en todas las partes y es autoconsistente: el 3C v2 corregido vive en
+chat.js (PARTE 6), index.html muestra solo el comentario puntero (PARTE 5), el
+script de chat.js esta cerrado, el glue es idempotente, el buscador esta protegido,
+el Susurro usa premium NATIVO y va dirigido por uid. Nada sigue "pendiente".
 
 METODOLOGIA (baseline = momento del build 1.9.27):
-- APK 1.9.27 construido el 2026-09-26 19:08 EDT; APK 1.9.28 el 2026-09-26 21:13 EDT.
-- PORTAL (radiolatinapp.github.io): base = commit 5ddcfe9 (2026-09-26 14:06 EDT, antes del build 1.9.27)
-  (ultimo commit antes del build 1.9.27; no hubo commits entre 14:06 y 19:08 EDT).
-  head = commit 4067de4 (2026-09-27 11:32 EDT, estado actual tras el revert).
-- APP WEB (android/app/src/main/assets/public/ en el PC): base = index.html.bak-1.9.27
-  (2026-09-26 18:49, fuente exacta del build 1.9.27); head = index.html (2026-09-26 20:59,
-  fuente del build 1.9.28). Diff calculado en el PC con difflib.
-- ANDROID/NATIVO: sin cambios (ningun .java/.xml modificado desde el build 1.9.27).
+- APK 1.9.27 construido el 2026-09-26 19:08 EDT.
+- PORTAL (radiolatinapp.github.io): base = commit 5ddcfe9 (2026-09-26 14:06 EDT,
+  antes del build 1.9.27); head = commit 4067de4 (2026-09-27 11:32 EDT, estado
+  actual tras el revert). Sin cambios funcionales posteriores en el portal (los
+  commits 8adba8f, 5c4f1f8, 7cd2bd1 solo publican este diff). PARTES 1-4 SIN
+  CAMBIOS respecto a la version anterior.
+- APP WEB (android/app/src/main/assets/public/ en el PC):
+  index.html: base = index.html.bak-1.9.27 (595.604 bytes, fuente exacta del build
+    1.9.27, 2026-09-26 18:49); head = index.html actual (600.983 bytes,
+    2026-09-27 ~12:30 p.m. EDT, con las correcciones del veredicto de Tiger).
+  chat.js: base = chat.js.bak-20260927-veredicto (64.031 bytes, estado pre-port
+    del ciclo 1.9.27); head = chat.js actual (73.784 bytes, 2026-09-27
+    ~12:30 p.m. EDT: port de Susurro del portal + modulo Podcasts 3C v2).
+  Diffs unificados calculados en el PC con difflib (contexto 3): codigo real,
+  sin truncar, sin anexos sustitutivos.
+- ANDROID/NATIVO: re-verificado el 2026-09-27 ~12:45 p.m. EDT: ningun .java/.xml
+  ni recurso modificado desde el build 1.9.27 (los unicos archivos cambiados bajo
+  src/main son index.html, chat.js y sus .bak, cubiertos en PARTES 5-6).
+- NO SE COMPILO. No se genero APK/AAB. No se toco Firestore, Play Console,
+  GitHub ni el portal.
 
 COMMITS DEL CICLO EN EL PORTAL (index.html), del mas nuevo al mas viejo:
   bf5d7fb  Revert: restaurar hero Podcasts al SVG aprobado por Jeremy
@@ -48,7 +65,24 @@ COMMITS DEL CICLO EN EL PORTAL (index.html), del mas nuevo al mas viejo:
 NOTA: los commits ecc65ed/00859b3 fueron un cambio sin autorizacion ya REVERTIDO
 (bf5d7fb + eliminacion del PNG). Efecto neto en el diff: cero.
 
-
+CORRECCIONES DEL VEREDICTO DE TIGER (incluidas en el head de la app web):
+  1) Podcasts 3C v2 al esquema real: where('aprobado','==',true), titulo,
+     portada_url, ep.audio. El modulo vive en chat.js (PARTE 6); en index.html
+     quedo solo un comentario puntero NO ejecutable (PARTE 5).
+  2) <script src="chat.js"> sin cerrar -> <script src="chat.js"></script>.
+  3) Glue idempotente: bandera `booted`; boot() retorna si ya corrio;
+     firebase.initializeApp(c) solo ignora el error 'duplicate-app'.
+  4) Buscador pausado en modo Podcasts: guard
+     if(window.rlModoActual&&window.rlModoActual()==='podcasts')return;
+     en los handlers submit e input.
+  5) Susurro: premium NATIVO (window.RadioLatinaNative.isPremium() con respaldo
+     window.nativeBilling.isPremium(); llama al plugin RadioBilling.isPremium ->
+     isEntitled(): OWNER_BUILD en la variante owner, o entitlement guardado tras
+     la compra Play. NO usa window.rlIsPremium ni codigo web).
+  6) Susurro dirigido por uid: el boton lleva data-uid, se resuelve con
+     rlResolveUid (igual que el DM), y el documento guarda susurroParaUid; el
+     render y el aviso verifican por uid (el apodo queda como compatibilidad
+     visual con susurros antiguos).
 ########################################################################
 ========================================================================
 BLOQUE 1 DE 3: PORTAL (radiolatinapp.github.io)
@@ -1157,7 +1191,6 @@ Logo D2 'Onda Humana - Rosa Fuego' aprobado por Jeremy el 2026-09-27 ~02:19 EDT.
 <svg width="512" height="512" viewBox="0 0 96 96"><defs><linearGradient id="gD2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#E11D48"/></linearGradient></defs><rect x="4" y="4" width="88" height="88" rx="26" fill="url(#gD2)"/><rect x="12" y="10" width="72" height="30" rx="15" fill="#fff" opacity=".2"/><g fill="#fff"><circle cx="48" cy="36" r="11"/><path d="M28 68c0-10 9-16 20-16s20 6 20 16z"/></g><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M63.6 20.4A22 22 0 0 1 63.6 51.6" opacity=".95"/><path d="M69.2 14.8A30 30 0 0 1 69.2 57.2" opacity=".7"/><path d="M32.4 20.4A22 22 0 0 0 32.4 51.6" opacity=".95"/><path d="M26.8 14.8A30 30 0 0 0 26.8 57.2" opacity=".7"/></g></svg>
 ---
 
-
 ########################################################################
 ========================================================================
 BLOQUE 2 DE 3: APP WEB (www dentro de la app Android)
@@ -1165,12 +1198,96 @@ BLOQUE 2 DE 3: APP WEB (www dentro de la app Android)
 
 PARTE 5 - APP WEB: android/app/src/main/assets/public/index.html
 ########################################################################
-base = index.html.bak-1.9.27 (fuente exacta del build 1.9.27, 2026-09-26 18:49)
-head = index.html (fuente del build 1.9.28, 2026-09-26 20:59)
-Resultado: diff 100% ADITIVO (145 lineas agregadas, 0 eliminadas, 1 hunk).
-Contenido: BLOQUE 3B (cargarEmisorasComunitarias) + BLOQUE 3C v2 (Espacio Podcasts).
-Diff completo:
+base = index.html.bak-1.9.27 (595.604 bytes, fuente exacta del build 1.9.27, 2026-09-26 18:49)
+head = index.html (600.983 bytes, 2026-09-27 ~12:30 p.m. EDT, con correcciones del veredicto de Tiger)
+Diff unificado (difflib, contexto 3) - codigo real completo:
 
+--- a/index.html
++++ b/index.html
+@@ -1375,6 +1375,18 @@
+     /* 1.9.14: el chat no queda tapado por el reproductor */
+     body.player-open #page-chat{padding-bottom:215px}
+     body[data-page="chat"] #miniBubble{display:none!important}
++/* BLOQUE 3A — CSS (agregar a la hoja de estilos de la app) */
++.rl-segment{display:flex;gap:8px;padding:10px 16px 0}
++.rl-segment button{flex:1;padding:10px;border-radius:999px;border:1px solid #E11D48;background:transparent;color:#E11D48;font-weight:700;cursor:pointer}
++.rl-segment button.on{background:#E11D48;color:#fff}
++.badge-com{display:inline-block;background:#E11D48;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:6px;vertical-align:middle}
++.rl-empty{padding:24px;text-align:center;opacity:.7}
++.rl-back{margin:4px 0 8px;padding:8px 14px;border-radius:999px;border:1px solid #888;background:transparent;color:inherit;cursor:pointer}
++.rl-podtitle{margin:4px 0}
++.rl-poddesc{opacity:.75;margin:0 0 12px}
++.rl-podcat{opacity:.65;font-size:12px;margin:4px 0 0}
++.rl-ep{padding:12px;border-bottom:1px solid rgba(128,128,128,.25);cursor:pointer}
++.rl-ep b{font-size:15px}
+     </style>
+ </head>
+ <body>
+@@ -1436,6 +1448,12 @@
+         <h2 id="station-title">Emisoras para descubrir</h2>
+         <p id="resultText">Catálogo de 22 países</p>
+       </div>
++<!-- BLOQUE 3A — Selector "Radio en vivo | Podcasts".
++     Pegar justo ANTES de: <div class="stations" id="stationGrid"></div> -->
++<div class="rl-segment" id="rlSegment">
++  <button type="button" class="on" data-modo="radio">Radio en vivo</button>
++  <button type="button" data-modo="podcasts">Podcasts</button>
++</div>
+       <div class="stations" id="stationGrid"></div>
+       <button class="load-more" id="loadMoreBtn" type="button">Mostrar más</button>
+     </section>
+@@ -2521,11 +2539,13 @@
+     }
+     function bindStationGrid(gridEl) {
+       gridEl.querySelectorAll('.station-art').forEach(btn => btn.addEventListener('click', () => {
+-        const station = stations[Number(btn.dataset.id)];
++        const _sid = btn.dataset.id;
++        const station = stations[Number(_sid)] || stations.find(function(s){ return String(s.id) === _sid; });
+         if (station) playStation(station);
+       }));
+       gridEl.querySelectorAll('.favorite').forEach(btn => btn.addEventListener('click', () => {
+-        const st = stations[Number(btn.dataset.id)];
++        const _fid = btn.dataset.id;
++        const st = stations[Number(_fid)] || stations.find(function(s){ return String(s.id) === _fid; });
+         const key = st ? favKey(st) : btn.dataset.name;
+         if (state.favorites.has(key)) state.favorites.delete(key);
+         else state.favorites.add(key);
+@@ -2618,6 +2638,7 @@
+     });
+ 
+     document.getElementById('searchForm').addEventListener('submit', event => {
++      if(window.rlModoActual&&window.rlModoActual()==='podcasts')return;
+       event.preventDefault();
+       state.query = document.getElementById('searchInput').value.trim();
+       state.favoritesOnly = false;
+@@ -2627,6 +2648,7 @@
+       document.getElementById('searchInput').blur();
+     });
+     document.getElementById('searchInput').addEventListener('input', event => {
++      if(window.rlModoActual&&window.rlModoActual()==='podcasts')return;
+       // Al borrar el campo, volver a la vista completa sin filtros de búsqueda.
+       if (!event.target.value.trim() && state.query) {
+         state.query = '';
+@@ -2796,6 +2818,66 @@
+     renderStations();
+     window.RLShowPage('inicio');
+ 
++    /* ===== BLOQUE 3B — comunitarias (1.9.28) ===== */
++    /* BLOQUE 3B — Emisoras comunitarias (app 1.9.28).
++       Pegar AL FINAL del script principal. NO modifica ninguna función existente:
++       envuelve stationCardHTML para agregar la insignia "Comunidad".
++       Llamar cargarEmisorasComunitarias() una vez, después de que window.stations
++       esté listo (donde hoy se llama renderStations() por primera vez). */
++    (function(){
++      var _card=(typeof stationCardHTML!=='undefined')?stationCardHTML:null;
++      if(_card){
++        stationCardHTML=function(s){
++          var html=_card(s);
++          if(s&&s.comunitaria){
++            html=html.replace('<h3 class="station-name">',
++              '<h3 class="station-name"><span class="badge-com">Comunidad</span> ');
++          }
++          return html;
 +        };
 +      }
 +    
@@ -1211,12 +1328,211 @@ Diff completo:
 +    })();
 +    
 +
-+    /* ===== BLOQUE 3C v2 ƒ?" podcasts (1.9.28) ===== */
-+    /* BLOQUE 3C v2 ƒ?" Espacio Podcasts (app 1.9.28). REEMPLAZA al 3C anterior.
++    /* ===== BLOQUE 3C v2 - podcasts (1.9.28) ===== */
++    /* Movido a chat.js el 2026-09-27 (veredicto de Tiger). El modulo vive ahora en
++       chat.js como IIFE independiente; expone window.rlModoActual() y
++       window.cargarPodcasts(). No duplicar este bloque aqui. */
+   </script>
+   <script src="js/now-playing.js"></script>
+   <script src="js/history.js"></script>
+@@ -2807,8 +2889,29 @@
+   <script src="vendor/firebase-app-compat.js"></script>
+   <script src="vendor/firebase-auth-compat.js"></script>
+   <script src="vendor/firebase-firestore-compat.js"></script>
++  <script>
++  /* Glue 1.9.28: Firebase (compat) ya cargo; inicializar y traer comunitarias + podcasts. */
++  (function(){
++    var booted=false; /* FIX 2026-09-27 veredicto Tiger: idempotente */
++    function boot(){
++      if(booted) return;
++      booted=true;
++      try{
++        var ready = (firebase.apps && firebase.apps.length)
++          ? Promise.resolve()
++          : fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(c){ try{ firebase.initializeApp(c); }catch(e){ if(String((e&&e.code)||'').indexOf('duplicate-app')===-1) throw e; } });
++        ready.then(function(){
++          if (typeof window.cargarEmisorasComunitarias === 'function') window.cargarEmisorasComunitarias();
++          if (typeof window.cargarPodcasts === 'function') window.cargarPodcasts();
++        }).catch(function(){});
++      }catch(e){}
++    }
++    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
++    else boot();
++  })();
++  </script>
+   <script src="native-bridges.js"></script>
+-  <script src="chat.js">
++  <script src="chat.js"></script>
+ <script src="js/multicapa.js"></script>
+     <script src="badge-ads-programaticos.js" onload="try{if(typeof renderStations==='function')renderStations();}catch(e){}"></script>
+   <script src="js/avisos.js"></script>
+
+########################################################################
+PARTE 6 - APP WEB: chat.js (port de Susurro + modulo Podcasts 3C v2)
+########################################################################
+base = chat.js.bak-20260927-veredicto (64.031 bytes, estado pre-port del ciclo 1.9.27)
+head = chat.js (73.784 bytes, 2026-09-27 ~12:30 p.m. EDT: Susurro del portal con
+  premium NATIVO y direccion por uid + Podcasts 3C v2 movido desde index.html)
+Diff unificado (difflib, contexto 3) - codigo real completo:
+
+--- a/chat.js
++++ b/chat.js
+@@ -12,7 +12,9 @@
+  *   privado con el boton "Privado" de un mensaje; el otro usuario puede
+  *   leer/responder aunque sea gratis; respeta la lista de bloqueados.
+  *   Descubrimiento: query pair array-contains (sin indice compuesto).
+- * Depende de firebase-app-compat.js, firebase-auth-compat.js y
++ *  * 1.9.28: Susurro (port del portal BLOQUE SUSURRO-2) + Espacio Podcasts
++ *   (modulo 3C v2 movido desde index.html; veredicto de Tiger 2026-09-27).
++Depende de firebase-app-compat.js, firebase-auth-compat.js y
+  * firebase-firestore-compat.js (carpeta vendor/). La configuración pública
+  * del proyecto se lee de firebase-config.json en tiempo de ejecución.
+  * Todo degrada con avisos si Firebase o los plugins nativos no están.
+@@ -124,6 +126,7 @@
+       '.chat-msg-actions{display:flex;gap:6px;margin-top:6px}',
+       '.chat-flag{font-size:.72rem;font-weight:700;color:var(--muted);background:none;border:0;cursor:pointer;padding:3px 2px}',
+       '.chat-flag:hover{color:var(--brand)}',
++      '.chat-susurro-tag{display:inline-block;font-size:.68rem;font-weight:700;color:var(--brand);border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap}',
+       '.chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}',
+       '.chat-input{flex:1;min-width:0;border:1px solid var(--line);border-radius:999px;padding:10px 14px;background:var(--bg);color:var(--ink);font:inherit}',
+       '.chat-input:focus{outline:2px solid var(--brand);outline-offset:1px}',
+@@ -487,16 +490,22 @@
+       var time = formatTime(data.createdAt);
+       var flag = data.pais ? flagEmoji(String(data.pais)) + ' ' : '';
+       var sx = data.sexo ? ' ' + sexIcon(String(data.sexo)) : '';
+-      var txt = data.texto || data.text || '';
++      /* 1.9.28: Susurro (port del portal) - solo autor y destinatario ven el texto (por uid, veredicto Tiger) */
++      var esSusurro = !!data.esSusurro, paraNick = data.susurroPara || '', paraUid = data.susurroParaUid || '';
++      var myUid = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser.uid : '';
++      var puedoVer = !esSusurro || isOwn || paraNick === mine || (!!paraUid && paraUid === myUid);
++      var txt = puedoVer ? (data.texto || data.text || '') : '🔒 Mensaje privado';
++      var susTag = esSusurro ? '<span class="chat-susurro-tag">🔒 ' + (puedoVer ? ('Susurro · ' + esc(paraNick)) : 'Susurro') + '</span>' : '';
+       return '<div class="chat-msg' + (isOwn ? ' own' : '') + '" data-nick="' + esc(nick) + '" data-uid="' + esc(data.uid || '') + '">' +
+-        '<div class="chat-msg-head"><b>' + flag + esc(nick) + sx + '</b>' +
++        '<div class="chat-msg-head"><b>' + flag + esc(nick) + sx + '</b>' + susTag +
+         (time ? '<span>' + esc(time) + '</span>' : '') + '</div>' +
+         '<p>' + esc(txt) + '</p>' +
+         '<div class="chat-msg-actions">' +
+         '<button class="chat-flag" type="button" data-action="report" data-id="' + esc(d.id) + '" data-nick="' + esc(nick) + '">Reportar</button>' +
+         (isOwn ? '' : '<button class="chat-flag" type="button" data-action="block" data-nick="' + esc(nick) + '">Bloquear</button>' +
+           '<button class="chat-flag" type="button" data-action="invite" data-nick="' + esc(nick) + '">Invitar</button>' +
+-          '<button class="chat-flag" type="button" data-action="dm" data-nick="' + esc(nick) + '" data-uid="' + esc(data.uid || '') + '">Privado</button>') +
++          '<button class="chat-flag" type="button" data-action="dm" data-nick="' + esc(nick) + '" data-uid="' + esc(data.uid || '') + '">Privado</button>' +
++          '<button class="chat-flag" type="button" data-action="whisper" data-nick="' + esc(nick) + '" data-uid="' + esc(data.uid || '') + '">🔒 Susurro</button>') +
+         '</div></div>';
+     }).join('');
+     if (nearBottom) box.scrollTop = box.scrollHeight;
+@@ -514,6 +523,7 @@
+           var docs = [];
+           snap.forEach(function (d) { docs.push(d); });
+           renderMessages(docs.reverse());
++          noteWhisper(docs); /* 1.9.28: avisa si llego un susurro para mi */
+           if (meta) meta.textContent = 'Sala general · ' + getNickname();
+         }, function () {
+           if (meta) meta.textContent = 'No se pudieron cargar los mensajes.';
+@@ -597,6 +607,15 @@
+       var dmUid = rlResolveUid(nick, target.getAttribute('data-uid') || '');
+       if (!dmUid){ notice('Para hablarle al privado, ' + nick + ' debe actualizar la app y escribir un mensaje nuevo.'); return; }
+       startDMFlow(dmUid, nick);
++      return;
++    }
++
++    if (action === 'whisper') {
++      /* 1.9.28: susurro (port del portal BLOQUE SUSURRO-2) - por uid (veredicto Tiger 2026-09-27) */
++      if (!nick) return;
++      var wUid = rlResolveUid(nick, target.getAttribute('data-uid') || '');
++      if(!wUid){ notice('Para susurrarle, ' + nick + ' debe actualizar la app y escribir un mensaje nuevo.'); return; }
++      sendWhisper(nick, wUid);
+       return;
+     }
+ 
+@@ -1330,6 +1349,70 @@
+     syncDMs(); /* 1.9.20 */
+   }
+ 
++  /* ================ 1.9.28: SUSURRO (port del portal BLOQUE SUSURRO-2) ================
++   * Privado dentro de la sala general: el mensaje lleva esSusurro:true y
++   * susurroPara:<nick>. Solo el autor y el destinatario ven el texto real;
++   * los demas ven el aviso de mensaje privado. Solo Premium puede enviarlos.
++   */
++  var seenWhisper = {};
++  function noteWhisper(docs){
++    var mine = getNickname() || '';
++    if(!mine) return;
++    docs.forEach(function(d){
++      var data = d.data() || {}, ya = seenWhisper[d.id];
++      seenWhisper[d.id] = 1;
++      if(ya) return;
++      var myUidN = (typeof auth !== 'undefined' && auth && auth.currentUser) ? auth.currentUser.uid : '';
++      var paraMi = data.susurroPara === mine || (!!data.susurroParaUid && data.susurroParaUid === myUidN);
++      if(data.esSusurro && paraMi && (data.apodo || data.nickname || '') !== mine && data.uid !== myUidN){
++        notice('🔒 ' + (data.apodo || data.nickname || 'Alguien') + ' te susurró en privado.');
++      }
++    });
++  }
++  /* 1.9.28-T2: premium NATIVO para el Susurro (veredicto Tiger 2026-09-27):
++     solo el puente nativo (RadioBilling: OWNER_BUILD o compra Play).
++     NO usa window.rlIsPremium (codigo web). */
++  async function rlIsNativePremium(){
++    try{
++      if(window.RadioLatinaNative && window.RadioLatinaNative.isPremium) return !!(await window.RadioLatinaNative.isPremium());
++      if(window.nativeBilling && window.nativeBilling.isPremium) return !!(await window.nativeBilling.isPremium());
++    }catch(e){}
++    return false;
++  }
++  async function sendWhisper(targetNick, targetUid){
++    if(!targetNick) return;
++    if(!(await rlIsNativePremium())){ rlOpenPaywall(); return; }
++    var text = null;
++    try{ text = window.prompt('Susurro para ' + targetNick + ' (solo ustedes dos lo verán):', ''); }catch(e){ return; }
++    if(text == null) return;
++    text = String(text).trim().slice(0, MAX_TEXT);
++    if(!text){ notice('Escribe un mensaje antes de enviarlo.'); return; }
++    var now = Date.now();
++    if(now - _lastMsgAt < 3000){ notice('Espera un momento antes de enviar otro mensaje.'); return; }
++    if(hasBadWord(text)){ notice('Tu mensaje contiene palabras no permitidas.'); return; }
++    if(!(await ensureSignedIn())) return;
++    var prof = rlChatProfile();
++    var nick = prof.nick || getNickname() || 'Oyente';
++    try{
++      await messagesRef().add({
++        texto: text,
++        apodo: nick,
++        sexo: prof.sexo || 'X',
++        pais: prof.pais || rlDetectCountry(),
++        uid: auth.currentUser.uid,
++        esSusurro: true,
++        susurroPara: targetNick,
++        susurroParaUid: targetUid || '',
++        createdAt: firebase.firestore.FieldValue.serverTimestamp()
++      });
++      _lastMsgAt = now;
++      rlPlaySentSound();
++      notice('🔒 Susurro enviado a ' + targetNick + '.');
++    }catch(error){
++      notice('No se pudo enviar tu susurro. Inténtalo de nuevo.');
++    }
++  }
++
+   /* ---------------- Init ---------------- */
+ 
+   function init() {
+@@ -1352,3 +1435,94 @@
+     init();
+   }
+ })();
++
++/* ================ 1.9.28: ESPACIO PODCASTS (veredicto Tiger 2026-09-27) ================
++ * Modulo 3C v2 movido desde index.html (no duplicar). Expone window.rlModoActual()
++ * y window.cargarPodcasts(). Esquema: podcasts where('aprobado','==',true);
++ * podcast {titulo, portada_url}; episodio {ep.audio}.
++ */
++    /* ===== BLOQUE 3C v2 — podcasts (1.9.28) ===== */
++    /* BLOQUE 3C v2 — Espacio Podcasts (app 1.9.28). REEMPLAZA al 3C anterior.
 +       Cambios v2:
-+       - Oculta "Mostrar mA­s" (#loadMoreBtn) en modo Podcasts y en episodios; lo restaura en radio.
++       - Oculta "Mostrar más" (#loadMoreBtn) en modo Podcasts y en episodios; lo restaura en radio.
 +       - Expone window.rlModoActual() para que el buscador se pause en modo Podcasts
-+         (agregar la lA-nea guard al inicio del handler de bA§squeda, ver PARCHE-BUSCADOR.txt).
++         (agregar la línea guard al inicio del handler de búsqueda, ver PARCHE-BUSCADOR.txt).
 +       Pegar AL FINAL del script principal. NO modifica funciones existentes. */
 +    (function(){
 +      function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -1227,10 +1543,10 @@ Diff completo:
 +        try{
 +          var DB=(typeof db!=='undefined')?db:(typeof firebase!=='undefined'?firebase.firestore():null);
 +          if(!DB) return;
-+          var snap=await DB.collection('podcasts').where('estado','==','activa').get();
++          var snap=await DB.collection('podcasts').where('aprobado','==',true).get();
 +          podcasts=[];
 +          snap.forEach(function(doc){ var p=doc.data();
-+            podcasts.push({id:doc.id, nombre:p.nombre||'Sin nombre', logo:p.logo_url||'',
++            podcasts.push({id:doc.id, titulo:p.titulo||'Sin título', portada:p.portada_url||'',
 +              categoria:p.categoria||'', descripcion:p.descripcion||'', episodios:p.episodios||[]});
 +          });
 +        }catch(e){ podcasts=[]; }
@@ -1240,14 +1556,14 @@ Diff completo:
 +      async function mostrarPodcasts(){
 +        var grid=document.getElementById('stationGrid'); if(!grid) return;
 +        var _lm=document.getElementById('loadMoreBtn'); if(_lm) _lm.style.display='none';
-+        if(!cargados){ grid.innerHTML='<p class="rl-empty">Cargando podcastsƒ?Ý</p>'; await window.cargarPodcasts(); }
-+        if(!podcasts.length){ grid.innerHTML='<p class="rl-empty">AA§n no hay podcasts publicados.</p>'; return; }
++        if(!cargados){ grid.innerHTML='<p class="rl-empty">Cargando podcasts…</p>'; await window.cargarPodcasts(); }
++        if(!podcasts.length){ grid.innerHTML='<p class="rl-empty">Aún no hay podcasts publicados.</p>'; return; }
 +        grid.innerHTML=podcasts.map(function(p){
-+          var img=p.logo
-+            ? '<img src="'+esc(p.logo)+'" style="width:56px;height:56px;border-radius:12px;object-fit:cover" onerror="this.style.display=\'none\'">'
-+            : '<div style="width:56px;height:56px;border-radius:12px;background:#E11D48;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">'+esc(p.nombre.charAt(0).toUpperCase())+'</div>';
++          var img=p.portada
++            ? '<img src="'+esc(p.portada)+'" style="width:56px;height:56px;border-radius:12px;object-fit:cover" onerror="this.style.display=\'none\'">'
++            : '<div style="width:56px;height:56px;border-radius:12px;background:#E11D48;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">'+esc(p.titulo.charAt(0).toUpperCase())+'</div>';
 +          return '<article class="station rl-podcast" data-id="'+esc(p.id)+'" style="cursor:pointer">'+img+
-+            '<h3 class="station-name">'+esc(p.nombre)+'</h3>'+
++            '<h3 class="station-name">'+esc(p.titulo)+'</h3>'+
 +            (p.categoria?'<p class="rl-podcat">'+esc(p.categoria)+'</p>':'')+'</article>';
 +        }).join('');
 +        grid.querySelectorAll('.rl-podcast').forEach(function(el){
@@ -1260,23 +1576,23 @@ Diff completo:
 +        podcasts.forEach(function(x){ if(x.id===podId) p=x; });
 +        var grid=document.getElementById('stationGrid'); if(!grid||!p) return;
 +        var _lm=document.getElementById('loadMoreBtn'); if(_lm) _lm.style.display='none';
-+        var html='<button class="rl-back" id="rlVolver">ƒ+? Podcasts</button>'+
-+                 '<h2 class="rl-podtitle">'+esc(p.nombre)+'</h2>';
++        var html='<button class="rl-back" id="rlVolver">← Podcasts</button>'+
++                 '<h2 class="rl-podtitle">'+esc(p.titulo)+'</h2>';
 +        if(p.descripcion) html+='<p class="rl-poddesc">'+esc(p.descripcion)+'</p>';
-+        if(!p.episodios.length) html+='<p class="rl-empty">Sin episodios todavA-a.</p>';
++        if(!p.episodios.length) html+='<p class="rl-empty">Sin episodios todavía.</p>';
 +        html+=p.episodios.map(function(ep,i){
 +          return '<article class="rl-ep" data-i="'+i+'"><b>'+esc(ep.titulo||('Episodio '+(i+1)))+'</b><br>'+
-+            '<small>'+esc(ep.fecha||'')+(ep.duracion?' Aú '+esc(ep.duracion):'')+'</small></article>';
++            '<small>'+esc(ep.fecha||'')+(ep.duracion?' · '+esc(ep.duracion):'')+'</small></article>';
 +        }).join('');
 +        grid.innerHTML=html;
 +        document.getElementById('rlVolver').onclick=function(){ mostrarPodcasts(); };
 +        grid.querySelectorAll('.rl-ep').forEach(function(el){
 +          el.onclick=function(){
 +            var ep=p.episodios[+el.getAttribute('data-i')];
-+            if(ep&&ep.audio_url&&typeof playStation==='function'){
++            if(ep&&ep.audio&&typeof playStation==='function'){
 +              playStation({id:'pod_'+p.id+'_'+el.getAttribute('data-i'),
-+                name:ep.titulo||p.nombre, country:'', code:'', city:'', genre:'Podcast',
-+                logo:p.logo||'', stream:ep.audio_url});
++                name:(p.titulo||'Podcast')+' · '+(ep.titulo||'Episodio'), country:'', code:'', city:'', genre:'Podcast',
++                logo:p.portada||'', stream:ep.audio});
 +            }
 +          };
 +        });
@@ -1296,144 +1612,20 @@ Diff completo:
 +        });
 +      }
 +    })();
-+    
-+
-   </script>
-   <script src="js/now-playing.js"></script>
-   <script src="js/history.js"></script>
-@@ -2807,6 +2972,24 @@
 
-   <script src="vendor/firebase-app-compat.js"></script>
-   <script src="vendor/firebase-auth-compat.js"></script>
-   <script src="vendor/firebase-firestore-compat.js"></script>
-+  <script>
-+  /* Glue 1.9.28: Firebase (compat) ya cargo; inicializar y traer comunitarias + podcasts. */
-+  (function(){
-+    function boot(){
-+      try{
-+        var ready = (firebase.apps && firebase.apps.length)
-+          ? Promise.resolve()
-+          : fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(c){ firebase.initializeApp(c); });
-+        ready.then(function(){
-+          if (typeof window.cargarEmisorasComunitarias === 'function') window.cargarEmisorasComunitarias();
-+          if (typeof window.cargarPodcasts === 'function') window.cargarPodcasts();
-+        }).catch(function(){});
-+      }catch(e){}
-+    }
-+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-+    else boot();
-+  })();
-+  </script>
-   <script src="native-bridges.js"></script>
-   <script src="chat.js">
- <script src="js/multicapa.js"></script>
-
-... total chars: 8000
-
-
-
-########################################################################
-PARTE 6 - APP WEB: chat.js - ESTADO (sin cambios en el ciclo)
-########################################################################
-chat.js (64,031 bytes, 2026-09-26 03:27) NO cambio entre 1.9.27 y 1.9.28.
-Verificacion de contenido (grep, 2026-09-27):
-  - 'susurro': 0 ocurrencias  -> el port de Susurro a chat.js esta PENDIENTE
-  - 'podcast': 0 ocurrencias  -> el port de Podcasts a chat.js esta PENDIENTE
-  - 'ep.audio': 0 ocurrencias -> chat.js aun NO lee ep.audio (pendiente al portar)
-  - 'cargarEmisorasComunitarias': 0 (vive en index.html, Bloque 3B)
-Conclusion Tiger: al portar Podcasts a la app, chat.js debe leer ep.audio;
-el port de Susurro+Podcasts a chat.js queda como trabajo pendiente, no es
-parte del diff 1.9.27->1.9.28 porque aun no se implemento.
-
-Badge Comunidad: SI implementado en la app web (index.html, Bloque 3B):
-  '<span class="badge-com">Comunidad</span>' envuelve stationCardHTML para las
-  emisoras comunitarias (s.comunitaria). Incluido en el diff de la Parte 5.
-
-
-########################################################################
 ========================================================================
 BLOQUE 3 DE 3: ANDROID/NATIVO
 ========================================================================
 
-PARTE 7 - ANDROID/NATIVO: sin cambios en el ciclo
+PARTE 7 - ANDROID/NATIVO: sin cambios funcionales en el ciclo
 ########################################################################
-Barrido de android/app/src/main/java y res: ningun archivo modificado desde
-el build 1.9.27 (2026-09-26 19:08). versionCode 44 / versionName 1.9.28 sin
-cambios nativos en el ciclo.
+Re-barrido el 2026-09-27 ~12:45 p.m. EDT de android/app/src/main (java, res,
+assets, manifest): ningun archivo .java/.xml ni recurso modificado desde el
+build 1.9.27 (2026-09-26 19:08). Los unicos 4 archivos cambiados bajo src/main
+son android/app/src/main/assets/public/index.html, chat.js y sus respaldos
+.bak-20260927-veredicto / .bak-20260927-tiger2, todos cubiertos en PARTES 5-6.
+versionCode 44 / versionName 1.9.28 sin cambios nativos en el ciclo.
 
 ========================================================================
-FIN DEL DIFF 1.9.27 -> 1.9.28
-========================================================================
-
-========================================================================
-ACTUALIZACIÓN POST-AUDITORÍA — veredicto de Tiger 2026-09-27
-========================================================================
-Fecha de aplicación: 2026-09-27 (después de las 12:00 p.m. EDT).
-Alcance: correcciones y ports ordenados por Tiger sobre el diff 1.9.27→1.9.28.
-NO SE COMPILÓ. No se generó APK/AAB. No se tocó Firestore, Play Console,
-GitHub ni el portal.
-
-------------------------------------------------------------------------
-1) index.html — corrección de Podcasts 3C v2 al esquema real
-------------------------------------------------------------------------
-Archivo: C:\Users\ricoj\PC-ControlRemoto\radio-latina-build\android\app\src\main\assets\public\index.html
-
-ANTES → DESPUÉS:
-- Query:            where('estado','==','activa')  →  where('aprobado','==',true)
-- Nombre podcast:   p.nombre                       →  p.titulo
-- Logo podcast:     p.logo_url                     →  p.portada_url
-- Audio episodio:   ep.audio_url                   →  ep.audio
-- Reproducción:     stream: ep.audio_url           →  stream: ep.audio
-- Logo en player:   logo: p.logo_url               →  logo: p.portada
-- Título:           solo episodio                  →  podcast + ' · ' + episodio
-
-Además:
-- <script src="chat.js"> sin cerrar → <script src="chat.js"></script>
-- Glue idempotente: bandera `booted`; boot() retorna si ya corrió;
-  firebase.initializeApp(c) solo ignora error 'duplicate-app'.
-- Buscador: guard intacto (submit e input):
-  if(window.rlModoActual&&window.rlModoActual()==='podcasts')return;
-
-------------------------------------------------------------------------
-2) chat.js — Susurro portado del portal (quirúrgico, sala general)
-------------------------------------------------------------------------
-Archivo: C:\Users\ricoj\PC-ControlRemoto\radio-latina-build\android\app\src\main\assets\public\chat.js
-
-Se añadió SIN tocar el DM/hilos privados existentes (dm_*):
-- CSS: .chat-susurro-tag (etiqueta limpia 🔒 Susurro · nick).
-- render: esSusurro/susurroPara; solo autor y destinatario ven el texto;
-  los demás ven '🔒 Mensaje privado'.
-- Botón: data-action="whisper" junto a DM/Reportar/Bloquear en cada mensaje.
-- Handler: solo Premium puede iniciar (verificación por rol).
-- Funciones: sendWhisper(destNick), noteWhisper(payload) con uid del autor.
-- Hook: se notifica al destinatario al recibir susurro.
-
-Verificado: node --check SYNTAX_OK; Unicode correcto (🔒 U+1F512, · U+00B7);
-sin secuencias literales "`n".
-
-------------------------------------------------------------------------
-3) chat.js — Espacio Podcasts 3C v2 movido desde index.html
-------------------------------------------------------------------------
-- El IIFE completo del Bloque 3C v2 (corregido al esquema real) se movió
-  de index.html a chat.js como módulo independiente.
-- En chat.js quedó: cabecera 'ESPACIO PODCASTS (veredicto Tiger 2026-09-27)',
-  window.rlModoActual y window.cargarPodcasts expuestos; si `db` no es
-  visible en el alcance, cae a firebase.firestore().
-- En index.html quedó solo un comentario puntero NO ejecutable:
-  /* Movido a chat.js el 2026-09-27 (veredicto de Tiger). ... */
-- Una sola copia activa de Podcasts (sin listeners ni estado duplicados).
-
-------------------------------------------------------------------------
-4) Verificaciones finales
-------------------------------------------------------------------------
-- chat.js: 72.723 bytes, UTF-8 sin BOM, LF; node --check OK.
-- index.html: 603.922 bytes; sin bloque 3C inline; puntero presente.
-- Esquema: 'aprobado' SÍ; 'estado'/'activa'/'nombre'/'logo_url'/'ep.audio_url' NO.
-- Respaldos: index.html.bak-20260927-veredicto y
-  chat.js.bak-20260927-veredicto en el mismo directorio.
-- Susurro: una sola acción/listener por mensaje; DM existente intacto.
-- Podcasts: render, episodios, player y buscador conformes al esquema real.
-
-========================================================================
-FIN DE LA ACTUALIZACIÓN POST-AUDITORÍA
+FIN DEL DIFF 1.9.27 -> 1.9.28 (REGENERADO 2026-09-27 ~12:45 p.m. EDT)
 ========================================================================
