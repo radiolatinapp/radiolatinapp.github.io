@@ -535,6 +535,7 @@ function subscribeGeneral(){
       .onSnapshot(function(snap){
         var docs=[]; snap.forEach(function(d){ d._room='general'; docs.push(d); });
         renderGeneral(docs.reverse());
+        noteWhisper(docs);
         if(meta) meta.textContent='Sala general · '+(rlChatProfile().nick||'Oyente');
       },function(){ if(meta) meta.textContent='No se pudieron cargar los mensajes.'; });
   }catch(e){ if(meta) meta.textContent='No se pudieron cargar los mensajes.'; }
@@ -563,6 +564,38 @@ async function sendGeneral(){
     _lastMsgAt=now; rlCountMsg(); input.value='';
   }catch(e){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
 }
+/* ---------- susurro premium (privado en la sala general) ---------- */
+var seenWhisper={};
+function noteWhisper(docs){
+  var mine=rlChatProfile().nick||'';
+  docs.forEach(function(d){
+    var data=d.data()||{}, ya=seenWhisper[d.id];
+    seenWhisper[d.id]=1;
+    if(ya) return;
+    if(data.esSusurro&&data.susurroPara===mine&&(data.apodo||'')!==mine){
+      toast('🔒 '+(data.apodo||'Alguien')+' te susurró en privado.');
+    }
+  });
+}
+async function sendWhisper(targetNick){
+  if(!targetNick) return;
+  if(!(await rlIsPremiumWeb())){ openPremium(); toast('👑 Solo Premium puede enviar mensajes privados.'); return; }
+  if(rlNeedProfile()){ openProfile(); toast('👤 Primero crea tu perfil del chat.'); return; }
+  var text=window.prompt('Mensaje privado para '+targetNick+':','');
+  if(text==null) return;
+  text=String(text).trim().slice(0,MAX_TEXT);
+  if(!text){ toast('Escribe un mensaje antes de enviarlo.'); return; }
+  var now=Date.now();
+  if(now-_lastMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
+  if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
+  if(!(await ensureSignedIn())) return;
+  var prof=rlChatProfile();
+  try{
+    await db.collection('rooms/general/messages').add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), esSusurro:true, susurroPara:targetNick, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    _lastMsgAt=now;
+    toast('🔒 Privado enviado a '+targetNick+'.');
+  }catch(e){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+}
 el('chatForm').addEventListener('submit',function(e){ e.preventDefault(); sendGeneral(); });
 el('chatMessages').addEventListener('click',async function(e){
   var t=e.target.closest?e.target.closest('[data-action]'):null; if(!t) return;
@@ -574,6 +607,7 @@ el('chatMessages').addEventListener('click',async function(e){
     if(unsub){ try{unsub();}catch(e3){} unsub=null; } subscribeGeneral();
   }
   if(action==='invite'){ openInviteModal(); return; }
+  if(action==='whisper'){ sendWhisper(nick); return; }
   if(action==='report'){
     var mid=t.getAttribute('data-id'); if(!mid) return;
     if(!window.confirm('¿Reportar este mensaje como inapropiado?')) return;
