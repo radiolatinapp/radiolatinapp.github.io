@@ -905,3 +905,29 @@ renderHistoryRow();
     if(window.fbInit) fbInit();
   });
 })();
+
+/* ===== CONTADOR-ANIM v1: el número sube contando (0 -> N) al cargar =====
+   Pegar AL FINAL de app.js (una sola vez). 100% aditivo: solo observa el
+   #visitCount y anima cuando llega el número real. Si Firebase falla, no hace nada. */
+(function(){
+  var el=document.getElementById('visitCount');
+  if(!el||!('MutationObserver' in window)||!window.requestAnimationFrame) return;
+  var done=false;
+  function fmt(n){ try{return Number(n).toLocaleString('es-CO');}catch(e){return String(n);} }
+  function animate(to){
+    var t0=null,dur=1100;
+    function step(ts){
+      if(!t0) t0=ts;
+      var p=Math.min(1,(ts-t0)/dur),e=1-Math.pow(1-p,3);
+      el.innerHTML='\uD83D\uDC65 <b class="vc-num">'+fmt(Math.round(to*e))+'</b> visitas';
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  new MutationObserver(function(){
+    if(done) return;
+    var m=el.textContent.match(/(\d[\d.]*)/);
+    if(m){ done=true; animate(parseInt(m[1].replace(/\./g,''),10)||0); }
+  }).observe(el,{childList:true,characterData:true,subtree:true});
+})();
+
