@@ -54,8 +54,8 @@ function fixedLogo(s){ var l=s.logo||''; return LOGO_FIX.hasOwnProperty(l)?LOGO_
 function logoHTML(s){
   var grad=genreGrad(s.genre);
   var logo=fixedLogo(s);
-  if(logo){ return '<div class="station-art" style="background:'+grad+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;art-fallback&quot;>'+esc(initials(s.name))+'</span>\'"><span class="live-pill" title="Emisora activa">📡</span></div>'; }
-  return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span><span class="live-pill" title="Emisora activa">📡</span></div>';
+  if(logo){ return '<div class="station-art" style="background:'+grad+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;art-fallback&quot;>'+esc(initials(s.name))+'</span>\'"></div>'; }
+  return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span></div>';
 }
 function cardHTML(s){
   var fav=FAVS[s.name]?' on':'';
@@ -67,6 +67,7 @@ function cardHTML(s){
     '<span class="station-play"><span class="pp">▶</span></span>'+
     '<span class="genre-tag">'+esc(s.genre||'Radio')+'</span>'+
     '<span class="station-info"><b>'+esc(s.name)+'</b><span>'+esc(s.city||s.country||'')+'</span></span>'+
+    '<span class="live-pill">📡</span>'+
   '</button>';
 }
 function findStation(name){ for(var i=0;i<STATIONS.length;i++) if(STATIONS[i].name===name) return STATIONS[i]; return null; }
