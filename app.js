@@ -594,7 +594,7 @@ async function sendWhisper(targetNick){
     await db.collection('rooms/general/messages').add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), esSusurro:true, susurroPara:targetNick, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
     _lastMsgAt=now;
     toast('🔒 Privado enviado a '+targetNick+'.');
-  }catch(e){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+  }catch(e){ toast(e && e.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
 }
 el('chatForm').addEventListener('submit',function(e){ e.preventDefault(); sendGeneral(); });
 el('chatMessages').addEventListener('click',async function(e){
@@ -735,7 +735,7 @@ el('roomForm').addEventListener('submit',async function(e){
   try{
     await roomMessagesRef(currentRoom.code).add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), uid:auth.currentUser.uid, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
     _lastRoomMsgAt=now; rlCountMsg(); input.value='';
-  }catch(err){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+  }catch(err){ toast(err && err.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
 });
 el('roomInviteBtn').addEventListener('click',function(){
   if(!currentRoom) return;
@@ -826,16 +826,45 @@ el('linkCodeBtn').addEventListener('click',async function(){
     if(!p.exists||p.data().premium!==true){ msg.textContent='Ese código ya no es premium.'; return; }
     try{ localStorage.setItem('rl_premium_uid',uid); }catch(e){}
     premiumCache=true;
+    await rlAlignPremiumUid(uid); /* FIX-PREMIUM-ALIGN: alinea uid anonimo con premium */
     msg.textContent='✅ Premium vinculado. Ya puedes enviar mensajes privados.';
     toast('👑 Premium vinculado');
   }catch(e){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; }
 });
+
+/* ---------- FIX-PREMIUM-ALIGN (Tiger 2026-09-27) ----------
+   El link-code guarda en localStorage el uid DE LA APP, pero el navegador
+   escribe con su uid ANONIMO. Las reglas exigen premium_uids/{request.auth.uid}.
+   Esta funcion marca el uid propio del navegador tras validar el codigo. */
+async function rlAlignPremiumUid(linkedUid){
+  try{
+    var luid = linkedUid || null;
+    try{ luid = luid || localStorage.getItem('rl_premium_uid'); }catch(e){}
+    if(!luid) return false; /* gratis sin vinculo: cero lecturas extra */
+    if(!(await fbInit())) return false;
+    await ensureSignedIn();
+    var me = (typeof auth!=='undefined' && auth.currentUser) ? auth.currentUser.uid : null;
+    if(!me) return false;
+    var mine = await db.collection('premium_uids').doc(me).get();
+    if(mine.exists && mine.data().premium === true) return true; /* ya alineado */
+    var p = await db.collection('premium_uids').doc(luid).get();
+    if(!p.exists || p.data().premium !== true) return false;
+    await db.collection('premium_uids').doc(me).set({
+      premium: true,
+      vinculadoDe: luid,
+      origen: 'web-link',
+      creado: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return true;
+  }catch(e){ return false; }
+}
 
 /* ---------- arranque del chat ---------- */
 async function initChat(){
   if(chatStarted) return; chatStarted=true;
   var ok=await fbInit(); if(!ok) return;
   await ensureSignedIn();
+  await rlAlignPremiumUid(null); /* FIX-PREMIUM-ALIGN: autocura navegadores ya vinculados */
   subscribeGeneral(); renderMyRooms();
 }
 
