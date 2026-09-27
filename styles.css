@@ -381,3 +381,12 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 
 /* Susurro premium en el chat general */
 .chat-susurro-tag{font-size:11px;color:#f5c542;margin-left:8px;font-weight:600;white-space:nowrap;}
+
+/* TARJETAS-V2 (spec 2026-09-27, aprobado por Jeremy): tile 3D protagonista, antena EN VIVO, ciudad uniforme */
+.station-art{background:linear-gradient(180deg,#fff,#eef0f5)!important;border-radius:18px;margin:10px 10px 0;aspect-ratio:4/3;box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.9);padding:12px}
+.station-art img{width:76%!important;height:76%!important}
+.genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
+.station-info b{display:none}
+.station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:#fff;white-space:nowrap}
+.live-pill{position:absolute;right:16px;bottom:52px;z-index:3;background:rgba(0,0,0,.55);border-radius:10px;padding:3px 7px;font-size:.8rem;line-height:1;animation:livePulse 2.4s ease-in-out infinite}
+@keyframes livePulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.12);opacity:1}}
