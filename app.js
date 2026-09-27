@@ -815,36 +815,47 @@ loadAvisos();
 renderResume();
 renderHistoryRow();
 })();
-/* BLOQUE 1B — Envío del formulario "Agrega tu emisora" (portal).
-   Pegar en app.js (o tu bundle JS del portal).
-   Requiere: db=firebase.firestore() y storage=firebase.storage() ya inicializados. */
+/* BLOQUE 1B v2 — Envío del formulario "Agrega tu emisora" (portal).
+   v2: funciona en plan Spark (sin bucket). El logo es best-effort:
+   - Si hay archivo: intenta subirlo; si la subida falla, continúa sin logo.
+   - Si el dueño pegó URL de logo: se usa tal cual (validada).
+   - logo_url puede quedar '' → la app/portal muestran un placeholder.
+   Requiere: db=firebase.firestore() inicializado. */
 (function(){
   var form=document.getElementById('ae-form');
   if(!form) return;
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var msg=document.getElementById('ae-msg');
-    if(window.fbInit){ var _ok=await fbInit(); if(!_ok){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; } }
     function v(id){ return document.getElementById(id).value.trim(); }
     var url=v('ae-url');
     if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(url)){
       msg.textContent='Necesitamos el link de audio directo, no el del video.';
       return;
     }
-    msg.textContent='Subiendo...';
+    var logoUrl=v('ae-logo-url');
+    if(logoUrl && !/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(logoUrl)){
+      msg.textContent='La URL del logo no parece una imagen válida.';
+      return;
+    }
+    msg.textContent='Enviando...';
     try{
-      var file=document.getElementById('ae-logo').files[0];
-      if(!file||file.type.indexOf('image/')!==0||file.size>2*1024*1024){
-        throw new Error('Logo inválido (imagen, máx 2MB).');
-      }
       var id='p'+Date.now().toString(36);
-      var ref=storage.ref('logos_pendientes/'+id+'.png');
-      await ref.put(file);
-      var logo_url=await ref.getDownloadURL();
+      var file=document.getElementById('ae-logo').files[0];
+      if(file && typeof storage!=='undefined'){
+        if(file.type.indexOf('image/')!==0||file.size>2*1024*1024){
+          throw new Error('Logo inválido (imagen, máx 2MB).');
+        }
+        try{
+          var ref=storage.ref('logos_pendientes/'+id+'.png');
+          await ref.put(file);
+          logoUrl=await ref.getDownloadURL();
+        }catch(upErr){ /* Sin bucket (Spark): se continúa sin logo subido */ }
+      }
       await db.collection('emisoras_pendientes').doc(id).set({
         nombre:v('ae-nombre'),
         stream_url:url,
-        logo_url:logo_url,
+        logo_url:logoUrl||'',
         pais:v('ae-pais'),
         ciudad:v('ae-ciudad'),
         genero:v('ae-genero'),
@@ -858,6 +869,7 @@ renderHistoryRow();
     }
   });
 })();
+
 
 /* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
 (function(){
