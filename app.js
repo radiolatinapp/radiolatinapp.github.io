@@ -1040,17 +1040,17 @@ renderHistoryRow();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ watchLink(); restorePremium(); });
   else { watchLink(); restorePremium(); }
-})();
 
-
+/* ===== PODCASTS v1 (dentro del IIFE principal: ve fbInit/db/toast/playStation) ===== */
 /* ===== PODCASTS v1 — Espacio Podcasts aditivo (portal). Luz verde de Tiger 2026-09-27 ~02:22.
+   Fix scope 2026-09-27 ~05:50 (causa raíz de Tiger): el bloque vive DENTRO del IIFE principal;
+   antes era un IIFE hermano donde fbInit/db no existían -> ReferenceError tragado por el catch.
    100% aditivo: no toca radio/chat/emisoras/premium. Logo D2 Rosa Fuego elegido por Jeremy.
    Datos: colección Firestore `podcasts` (solo aprobado==true). Sin aprobados -> estado vacío con CTA. NADA inventado.
    Plan Spark (sin Storage): portadas por URL (igual que logos de emisoras). Reglas Firestore: preparadas aparte,
    NO publicadas sin el OK directo de Jeremy (límite duro acordado con Tiger).
    Episodios: array `episodios` del doc (RSS parseado en la aprobación; refresco por script/Cloud Function).
    La reproducción reutiliza el reproductor actual (fase 1). */
-(function(){
   var PODCASTS=[], podQ='', podCat='';
   var POD_CATS=['Todos','Noticias','Deportes','Historia','Humor','Música','Misterio','Religiosos','Motivación','Otra'];
   var D2='assets/logos/podcast-d2-rosa-fuego.svg';
@@ -1220,4 +1220,5 @@ renderHistoryRow();
       }catch(err){ msg.textContent='Error: '+(err&&err.message?err.message:'desconocido'); }
     });
   }
+
 })();
