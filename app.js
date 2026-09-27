@@ -931,3 +931,46 @@ renderHistoryRow();
   }).observe(el,{childList:true,characterData:true,subtree:true});
 })();
 
+
+/* PREMIUM-UX v1 (JS) — Experiencia premium inmediata post-código. Pegar al FINAL de app.js (una sola vez). */
+(function(){
+  function applyPremiumTheme(){
+    if(document.body.classList.contains('rl-premium')) return;
+    document.body.classList.add('rl-premium');
+    if(!document.getElementById('rlPremiumBadge')){
+      var brand=document.querySelector('.topbar .brand');
+      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">👑 PREMIUM</span>');
+    }
+  }
+  function premiumWelcome(){
+    applyPremiumTheme();
+    try{ if(typeof closeModal==='function') closeModal('premiumModal'); }catch(e){}
+    if(document.getElementById('rlPremiumOverlay')) return;
+    var ov=document.createElement('div');
+    ov.id='rlPremiumOverlay';
+    ov.innerHTML='<div class="rl-ov-card"><span class="rl-ov-crown">👑</span><h2>¡Ya eres <span>Premium</span>!</h2><p>Tu código quedó vinculado en este navegador.</p><p>Ya puedes enviar mensajes privados en el chat.</p><div class="rl-ov-tap">Toca para continuar</div></div>';
+    function dismiss(){ if(!ov.parentNode) return; ov.classList.add('rl-ov-out'); setTimeout(function(){ ov.remove(); },320); }
+    ov.addEventListener('click',dismiss);
+    setTimeout(dismiss,4500);
+    document.body.appendChild(ov);
+  }
+  /* El handler existente escribe "Premium vinculado" en #linkCodeMsg al vincular: lo observamos. */
+  function watchLink(){
+    var msg=document.getElementById('linkCodeMsg');
+    if(!msg||!window.MutationObserver) return;
+    new MutationObserver(function(){
+      if(/premium vinculado/i.test(msg.textContent||'')) premiumWelcome();
+    }).observe(msg,{childList:true,characterData:true,subtree:true});
+  }
+  /* Al cargar: si ya había un código vinculado y sigue vigente, recuperar el tema premium. */
+  function restorePremium(){
+    try{
+      var uid=null; try{ uid=localStorage.getItem('rl_premium_uid'); }catch(e){}
+      if(!uid||typeof rlIsPremiumWeb!=='function') return;
+      rlIsPremiumWeb().then(function(ok){ if(ok) applyPremiumTheme(); }).catch(function(){});
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ watchLink(); restorePremium(); });
+  else { watchLink(); restorePremium(); }
+})();
+

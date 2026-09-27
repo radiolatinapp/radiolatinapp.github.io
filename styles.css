@@ -361,3 +361,20 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .rl-footer #visitCount{font-size:.95rem;}
 }
 
+
+/* PREMIUM-UX v1 (CSS) — Experiencia premium post-código. Pegar al FINAL de styles.css. */
+.rl-premium-badge{display:inline-flex;align-items:center;margin-left:10px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.06em;color:#1a1005;background:linear-gradient(135deg,#fde68a,#fbbf24 55%,#d97706);box-shadow:0 4px 14px rgba(251,191,36,.45);animation:rlBadgeShine 2.6s ease-in-out infinite;white-space:nowrap}
+@keyframes rlBadgeShine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+#rlPremiumOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(225,29,72,.30),rgba(10,10,18,.96) 70%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:rlOvIn .35s ease;cursor:pointer}
+#rlPremiumOverlay .rl-ov-card{text-align:center;max-width:88vw;padding:38px 46px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(251,191,36,.45);box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 60px rgba(251,191,36,.15);animation:rlOvPop .45s cubic-bezier(.2,1.4,.4,1)}
+#rlPremiumOverlay .rl-ov-crown{font-size:64px;display:block;animation:rlCrownBounce 1.6s ease-in-out infinite}
+@keyframes rlCrownBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+#rlPremiumOverlay h2{margin:14px 0 8px;font-size:26px;color:#fff}
+#rlPremiumOverlay h2 span{background:linear-gradient(135deg,#fde68a,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
+#rlPremiumOverlay p{margin:0 0 4px;color:rgba(255,255,255,.78);font-size:14px}
+#rlPremiumOverlay .rl-ov-tap{margin-top:18px;font-size:12px;color:rgba(255,255,255,.45)}
+@keyframes rlOvIn{from{opacity:0}to{opacity:1}}
+@keyframes rlOvPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+#rlPremiumOverlay.rl-ov-out{opacity:0;transition:opacity .3s}
+@media(max-width:560px){.rl-premium-badge{margin-left:6px;padding:5px 9px;font-size:11px}#rlPremiumOverlay .rl-ov-card{padding:28px 24px}#rlPremiumOverlay h2{font-size:22px}}
+
