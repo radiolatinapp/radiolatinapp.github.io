@@ -1,0 +1,1354 @@
+========================================================================
+DIFF COMPLETO 1.9.27 -> 1.9.28 - Revision pre-1.9.28 para Tiger
+========================================================================
+
+Preparado por Pendejito el 2026-09-27 ~12:00 EDT por orden de amo Jeremy Rico
+("dale con el diff"). Formato: archivo + URL cruda https entre comillas simples.
+
+METODOLOGIA (baseline = momento del build 1.9.27):
+- APK 1.9.27 construido el 2026-09-26 19:08 EDT; APK 1.9.28 el 2026-09-26 21:13 EDT.
+- PORTAL (radiolatinapp.github.io): base = commit 5ddcfe9 (2026-09-26 14:06 EDT, antes del build 1.9.27)
+  (ultimo commit antes del build 1.9.27; no hubo commits entre 14:06 y 19:08 EDT).
+  head = commit 4067de4 (2026-09-27 11:32 EDT, estado actual tras el revert).
+- APP WEB (android/app/src/main/assets/public/ en el PC): base = index.html.bak-1.9.27
+  (2026-09-26 18:49, fuente exacta del build 1.9.27); head = index.html (2026-09-26 20:59,
+  fuente del build 1.9.28). Diff calculado en el PC con difflib.
+- ANDROID/NATIVO: sin cambios (ningun .java/.xml modificado desde el build 1.9.27).
+
+COMMITS DEL CICLO EN EL PORTAL (index.html), del mas nuevo al mas viejo:
+  bf5d7fb  Revert: restaurar hero Podcasts al SVG aprobado por Jeremy
+  ecc65ed  Hero de Podcasts: apunta a d2-logo-512.png (cambio SIN autorizacion, revertido)
+  00859b3  Agrega d2-logo-512.png (subido sin autorizacion, ELIMINADO del repo)
+  c0adc31  Bump bundle ?v=20260927l (fix ep.audio)
+  fe1bc38  Podcasts: playPodcastEpisode usa ep.audio (fix reproduccion muda)
+  562a4fd  ?v=20260927k
+  68a0dbb  PODCASTS dentro del IIFE principal (fix ReferenceError fbInit) - hallazgo Tiger
+  aef0e1f  ?v=20260927j para app.js (fix race fbInit)
+  c06f1dc  fbInit race-safe (in-flight promise, patron signInPromise)
+  d737744  Podcasts: bump ?v=20260927i (fix de scope)
+  8af227c  Podcasts: fix de scope (causa raiz de Tiger) - bloque dentro del IIFE principal
+  4252413  Podcasts: bump ?v=20260927h (catch de loadPodcasts loguea errores)
+  68eaa32  Podcasts: catch de loadPodcasts loguea el error en consola
+  c97191c  Podcasts: categorias Religiosos+Motivacion en formulario Agrega tu podcast
+  b70fa0f  Podcasts: categoria Motivacion a POD_CATS
+  60daa56  Cache bump v=20260927f (fix tarjetas)
+  1a1bb81  Fix tarjetas: art-fallback visible en color marca #E11D48
+  f8ff67b  Fix tarjetas: fallback de iniciales con stop words (SPEC-TARJETAS-V2)
+  119108b  Podcasts v1: cache-bust ?v=20260927e en logo D2 del hero (auditoria Tiger 6/7)
+  0d0349f  Espacio Podcasts v1 (D2 Rosa Fuego): index.html
+  a671ef9  FIX antena SVG verde (auditoria Tiger)
+  54001b5  Portal: BLOQUE SUSURRO-2 (mensajes Susurro premium, solo autor/destinatario)
+  8be7cb1  Portal: cache-buster app.js ?v=20260927b (auditoria Tiger)
+  258b1bd  Portal: BLOQUE SUSURRO-2 (msgHTML)
+  54005aa  Restaura seccion Agrega tu emisora
+  45db4a4  Portal v5: modal Premium con vinculacion por codigo de 6 letras
+  dacaa9a  Portal 1.9.28: bloque 1A v2 (logo opcional + URL de logo, plan Spark)
+  035e1f9  1.9.28: agrega seccion Agrega tu emisora + SDK storage (bloques 1A/1B de Tiger)
+
+NOTA: los commits ecc65ed/00859b3 fueron un cambio sin autorizacion ya REVERTIDO
+(bf5d7fb + eliminacion del PNG). Efecto neto en el diff: cero.
+
+
+########################################################################
+PARTE 1 - PORTAL: index.html
+########################################################################
+diff --git a/index.html b/index.html   (base -> head)
+--- a/index.html (5ddcfe9 (2026-09-26 14:06 EDT, antes del build 1.9.27))
++++ b/index.html (4067de4 (2026-09-27 11:32 EDT, estado actual tras el revert))
+@@ -8,13 +8,14 @@
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+-<link rel="stylesheet" href="styles.css">
++<link rel="stylesheet" href="styles.css?v=20260927f">
+ <link rel="icon" type="image/png" href="assets/logos/d1-logo-512.png">
+ <link rel="apple-touch-icon" href="assets/logos/d1-logo-512.png">
+ <script>try{var _t=localStorage.getItem('rl_theme');if(_t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(_t!=='dark'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.setAttribute('data-theme','light');}}catch(_e){}</script>
+ <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
++<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+ </head>
+ <body>
+ <div class="aurora" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+@@ -29,8 +30,11 @@
+   <nav class="topnav">
+     <button data-nav="inicio" class="navlink active">Inicio</button>
+     <button data-nav="radio" class="navlink">Radio en vivo</button>
++    <button data-nav="podcasts" class="navlink">🎙️ Podcasts</button>
+     <button data-nav="chat" class="navlink">Chat</button>
+     <button data-nav="info" class="navlink">Info</button>
++    <a href="#agrega-emisora" class="navlink" id="navAgrega">➕ Agrega tu emisora</a>
++    <a href="#agrega-podcast" class="navlink" id="navAgregaPod">🎙️ Agrega tu podcast</a>
+   </nav>
+   <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema" title="Día / noche">🌙</button>
+   <a class="btn btn-primary btn-sm" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar app</a>
+@@ -120,6 +124,43 @@
+     <div id="grid" class="cards-grid"></div>
+     <div class="more-wrap"><button id="gridMore" class="btn btn-ghost" hidden>Ver más</button></div>
+     <div id="gridEmpty" class="empty" hidden>No encontramos emisoras con ese filtro. Prueba con otra búsqueda. 🔍</div>
++  </section>
++
++  <!-- ============ PODCASTS ============ -->
++  <section id="sec-podcasts" class="page">
++    <div class="pod-hero">
++      <img class="pod-hero-logo" src="assets/logos/podcast-d2-rosa-fuego.svg?v=20260927f" alt="Podcasts" width="88" height="88">
++      <div>
++        <h2>🎙️ Podcasts</h2>
++        <p class="muted">Podcasts latinos con su portada real, episodio por episodio.</p>
++      </div>
++    </div>
++    <div class="toolbar glass">
++      <div class="toolbar-search">
++        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
++        <input id="pq" type="search" placeholder="Buscar podcast…" autocomplete="off">
++      </div>
++    </div>
++    <div id="podCatChips" class="chips scroll-x"></div>
++    <div id="podGrid" class="pod-grid"></div>
++    <div id="podEmpty" class="empty" hidden>
++      Aún no hay podcasts publicados. ¿Tienes el tuyo? Envíalo y lo revisamos. 🎙️<br><br>
++      <button class="btn btn-primary" id="podGoAgrega">🎙️ Agrega tu podcast</button>
++    </div>
++    <div class="more-wrap"><button class="linklike" id="podGoAgrega2">🎙️ ¿Tienes un podcast? Agrégalo aquí →</button></div>
++    <div id="podDetail" class="pod-detail glass" hidden>
++      <button id="podDetailClose" class="icon-btn" title="Cerrar">✕</button>
++      <div class="pod-detail-head">
++        <img id="pdCover" alt="">
++        <div>
++          <h3 id="pdTitle"></h3>
++          <p id="pdMeta" class="muted" style="margin:0"></p>
++          <p id="pdDesc" class="pod-desc"></p>
++        </div>
++      </div>
++      <h4>Episodios</h4>
++      <div id="pdEps" class="pod-eps"></div>
++    </div>
+   </section>
+ 
+   <!-- ============ CHAT ============ -->
+@@ -239,11 +280,317 @@
+     </div>
+     <p class="foot-note">Radio Latina · Hecho con ❤️ para la comunidad latina</p>
+   </section>
++  <section id="agrega-emisora" class="page ae-wrap">
++    <div class="page-title"><h2>📻 Agrega tu emisora</h2></div>
++    <p class="ae-sub">Tu emisora sonando en Radio Latina: en la web y en la app.</p>
++    <form id="ae-form" class="ae-form glass">
++      <input id="ae-nombre" type="text" required maxlength="60" placeholder="Nombre de la emisora *">
++      <input id="ae-url" type="url" required placeholder="Link de transmisión (audio) *">
++      <label class="ae-file">Logo (opcional)<input id="ae-logo" type="file" accept="image/*"></label>
++      <input id="ae-logo-url" type="url" placeholder="…o pega la URL de tu logo si ya está en internet (opcional)">
++      <select id="ae-pais" required>
++        <option value="">País *</option>
++      <option value="Afganistán">Afganistán</option>
++      <option value="Albania">Albania</option>
++      <option value="Alemania">Alemania</option>
++      <option value="Andorra">Andorra</option>
++      <option value="Angola">Angola</option>
++      <option value="Anguila">Anguila</option>
++      <option value="Antigua y Barbuda">Antigua y Barbuda</option>
++      <option value="Arabia Saudita">Arabia Saudita</option>
++      <option value="Argelia">Argelia</option>
++      <option value="Argentina">Argentina</option>
++      <option value="Armenia">Armenia</option>
++      <option value="Aruba">Aruba</option>
++      <option value="Australia">Australia</option>
++      <option value="Austria">Austria</option>
++      <option value="Azerbaiyán">Azerbaiyán</option>
++      <option value="Bahamas">Bahamas</option>
++      <option value="Bangladés">Bangladés</option>
++      <option value="Barbados">Barbados</option>
++      <option value="Baréin">Baréin</option>
++      <option value="Bélgica">Bélgica</option>
++      <option value="Belice">Belice</option>
++      <option value="Benín">Benín</option>
++      <option value="Bermudas">Bermudas</option>
++      <option value="Bielorrusia">Bielorrusia</option>
++      <option value="Bolivia">Bolivia</option>
++      <option value="Bonaire">Bonaire</option>
++      <option value="Bosnia y Herzegovina">Bosnia y Herzegovina</option>
++      <option value="Botsuana">Botsuana</option>
++      <option value="Brasil">Brasil</option>
++      <option value="Brunéi">Brunéi</option>
++      <option value="Bulgaria">Bulgaria</option>
++      <option value="Burkina Faso">Burkina Faso</option>
++      <option value="Burundi">Burundi</option>
++      <option value="Bután">Bután</option>
++      <option value="Cabo Verde">Cabo Verde</option>
++      <option value="Camboya">Camboya</option>
++      <option value="Camerún">Camerún</option>
++      <option value="Canadá">Canadá</option>
++      <option value="Catar">Catar</option>
++      <option value="Chad">Chad</option>
++      <option value="Chile">Chile</option>
++      <option value="China">China</option>
++      <option value="Chipre">Chipre</option>
++      <option value="Ciudad del Vaticano">Ciudad del Vaticano</option>
++      <option value="Colombia">Colombia</option>
++      <option value="Comoras">Comoras</option>
++      <option value="Congo">Congo</option>
++      <option value="Congo (RDC)">Congo (RDC)</option>
++      <option value="Corea del Norte">Corea del Norte</option>
++      <option value="Corea del Sur">Corea del Sur</option>
++      <option value="Costa de Marfil">Costa de Marfil</option>
++      <option value="Costa Rica">Costa Rica</option>
++      <option value="Croacia">Croacia</option>
++      <option value="Cuba">Cuba</option>
++      <option value="Curazao">Curazao</option>
++      <option value="Dinamarca">Dinamarca</option>
++      <option value="Dominica">Dominica</option>
++      <option value="Ecuador">Ecuador</option>
++      <option value="Egipto">Egipto</option>
++      <option value="El Salvador">El Salvador</option>
++      <option value="Emiratos Árabes Unidos">Emiratos Árabes Unidos</option>
++      <option value="Eritrea">Eritrea</option>
++      <option value="Eslovaquia">Eslovaquia</option>
++      <option value="Eslovenia">Eslovenia</option>
++      <option value="España">España</option>
++      <option value="Estados Unidos">Estados Unidos</option>
++      <option value="Estonia">Estonia</option>
++      <option value="Esuatini">Esuatini</option>
++      <option value="Etiopía">Etiopía</option>
++      <option value="Filipinas">Filipinas</option>
++      <option value="Finlandia">Finlandia</option>
++      <option value="Fiyi">Fiyi</option>
++      <option value="Francia">Francia</option>
++      <option value="Gabón">Gabón</option>
++      <option value="Gambia">Gambia</option>
++      <option value="Georgia">Georgia</option>
++      <option value="Ghana">Ghana</option>
++      <option value="Gibraltar">Gibraltar</option>
++      <option value="Granada">Granada</option>
++      <option value="Grecia">Grecia</option>
++      <option value="Groenlandia">Groenlandia</option>
++      <option value="Guadalupe">Guadalupe</option>
++      <option value="Guam">Guam</option>
++      <option value="Guatemala">Guatemala</option>
++      <option value="Guayana Francesa">Guayana Francesa</option>
++      <option value="Guernsey">Guernsey</option>
++      <option value="Guinea">Guinea</option>
++      <option value="Guinea Ecuatorial">Guinea Ecuatorial</option>
++      <option value="Guinea-Bisáu">Guinea-Bisáu</option>
++      <option value="Guyana">Guyana</option>
++      <option value="Haití">Haití</option>
++      <option value="Honduras">Honduras</option>
++      <option value="Hong Kong">Hong Kong</option>
++      <option value="Hungría">Hungría</option>
++      <option value="India">India</option>
++      <option value="Indonesia">Indonesia</option>
++      <option value="Irak">Irak</option>
++      <option value="Irán">Irán</option>
++      <option value="Irlanda">Irlanda</option>
++      <option value="Isla de Man">Isla de Man</option>
++      <option value="Isla Norfolk">Isla Norfolk</option>
++      <option value="Islandia">Islandia</option>
++      <option value="Islas Caimán">Islas Caimán</option>
++      <option value="Islas Cocos">Islas Cocos</option>
++      <option value="Islas Cook">Islas Cook</option>
++      <option value="Islas Feroe">Islas Feroe</option>
++      <option value="Islas Malvinas">Islas Malvinas</option>
++      <option value="Islas Marianas del Norte">Islas Marianas del Norte</option>
++      <option value="Islas Marshall">Islas Marshall</option>
++      <option value="Islas Pitcairn">Islas Pitcairn</option>
++      <option value="Islas Salomón">Islas Salomón</option>
++      <option value="Islas Turcas y Caicos">Islas Turcas y Caicos</option>
++      <option value="Islas Vírgenes Británicas">Islas Vírgenes Británicas</option>
++      <option value="Islas Vírgenes de EE. UU.">Islas Vírgenes de EE. UU.</option>
++      <option value="Israel">Israel</option>
++      <option value="Italia">Italia</option>
++      <option value="Jamaica">Jamaica</option>
++      <option value="Japón">Japón</option>
++      <option value="Jersey">Jersey</option>
++      <option value="Jordania">Jordania</option>
++      <option value="Kazajistán">Kazajistán</option>
++      <option value="Kenia">Kenia</option>
++      <option value="Kirguistán">Kirguistán</option>
++      <option value="Kiribati">Kiribati</option>
++      <option value="Kosovo">Kosovo</option>
++      <option value="Kuwait">Kuwait</option>
++      <option value="Laos">Laos</option>
++      <option value="Lesoto">Lesoto</option>
++      <option value="Letonia">Letonia</option>
++      <option value="Líbano">Líbano</option>
++      <option value="Liberia">Liberia</option>
++      <option value="Libia">Libia</option>
++      <option value="Liechtenstein">Liechtenstein</option>
++      <option value="Lituania">Lituania</option>
++      <option value="Luxemburgo">Luxemburgo</option>
++      <option value="Macao">Macao</option>
++      <option value="Madagascar">Madagascar</option>
++      <option value="Malasia">Malasia</option>
++      <option value="Malaui">Malaui</option>
++      <option value="Maldivas">Maldivas</option>
++      <option value="Malí">Malí</option>
++      <option value="Malta">Malta</option>
++      <option value="Marruecos">Marruecos</option>
++      <option value="Martinica">Martinica</option>
++      <option value="Mauricio">Mauricio</option>
++      <option value="Mauritania">Mauritania</option>
++      <option value="Mayotte">Mayotte</option>
++      <option value="México">México</option>
++      <option value="Micronesia">Micronesia</option>
++      <option value="Moldavia">Moldavia</option>
++      <option value="Mónaco">Mónaco</option>
++      <option value="Mongolia">Mongolia</option>
++      <option value="Montenegro">Montenegro</option>
++      <option value="Montserrat">Montserrat</option>
++      <option value="Mozambique">Mozambique</option>
++      <option value="Myanmar">Myanmar</option>
++      <option value="Namibia">Namibia</option>
++      <option value="Nauru">Nauru</option>
++      <option value="Nepal">Nepal</option>
++      <option value="Nicaragua">Nicaragua</option>
++      <option value="Níger">Níger</option>
++      <option value="Nigeria">Nigeria</option>
++      <option value="Niue">Niue</option>
++      <option value="Noruega">Noruega</option>
++      <option value="Nueva Caledonia">Nueva Caledonia</option>
++      <option value="Nueva Zelanda">Nueva Zelanda</option>
++      <option value="Omán">Omán</option>
++      <option value="Países Bajos">Países Bajos</option>
++      <option value="Pakistán">Pakistán</option>
++      <option value="Palaos">Palaos</option>
++      <option value="Palestina">Palestina</option>
++      <option value="Panamá">Panamá</option>
++      <option value="Papúa Nueva Guinea">Papúa Nueva Guinea</option>
++      <option value="Paraguay">Paraguay</option>
++      <option value="Perú">Perú</option>
++      <option value="Polinesia Francesa">Polinesia Francesa</option>
++      <option value="Polonia">Polonia</option>
++      <option value="Portugal">Portugal</option>
++      <option value="Puerto Rico">Puerto Rico</option>
++      <option value="Reino Unido">Reino Unido</option>
++      <option value="República Centroafricana">República Centroafricana</option>
++      <option value="República Checa">República Checa</option>
++      <option value="República Dominicana">República Dominicana</option>
++      <option value="Reunión">Reunión</option>
++      <option value="Ruanda">Ruanda</option>
++      <option value="Rumania">Rumania</option>
++      <option value="Rusia">Rusia</option>
++      <option value="Sáhara Occidental">Sáhara Occidental</option>
++      <option value="Samoa">Samoa</option>
++      <option value="Samoa Americana">Samoa Americana</option>
++      <option value="San Bartolomé">San Bartolomé</option>
++      <option value="San Cristóbal y Nieves">San Cristóbal y Nieves</option>
++      <option value="San Marino">San Marino</option>
++      <option value="San Martín">San Martín</option>
++      <option value="San Pedro y Miquelón">San Pedro y Miquelón</option>
++      <option value="San Vicente y las Granadinas">San Vicente y las Granadinas</option>
++      <option value="Santa Elena">Santa Elena</option>
++      <option value="Santa Lucía">Santa Lucía</option>
++      <option value="Santo Tomé y Príncipe">Santo Tomé y Príncipe</option>
++      <option value="Senegal">Senegal</option>
++      <option value="Serbia">Serbia</option>
++      <option value="Seychelles">Seychelles</option>
++      <option value="Sierra Leona">Sierra Leona</option>
++      <option value="Singapur">Singapur</option>
++      <option value="Sint Maarten">Sint Maarten</option>
++      <option value="Siria">Siria</option>
++      <option value="Somalia">Somalia</option>
++      <option value="Sri Lanka">Sri Lanka</option>
++      <option value="Sudáfrica">Sudáfrica</option>
++      <option value="Sudán">Sudán</option>
++      <option value="Sudán del Sur">Sudán del Sur</option>
++      <option value="Suecia">Suecia</option>
++      <option value="Suiza">Suiza</option>
++      <option value="Surinam">Surinam</option>
++      <option value="Tailandia">Tailandia</option>
++      <option value="Taiwán">Taiwán</option>
++      <option value="Tanzania">Tanzania</option>
++      <option value="Tayikistán">Tayikistán</option>
++      <option value="Timor Oriental">Timor Oriental</option>
++      <option value="Togo">Togo</option>
++      <option value="Tokelau">Tokelau</option>
++      <option value="Tonga">Tonga</option>
++      <option value="Trinidad y Tobago">Trinidad y Tobago</option>
++      <option value="Túnez">Túnez</option>
++      <option value="Turkmenistán">Turkmenistán</option>
++      <option value="Turquía">Turquía</option>
++      <option value="Tuvalu">Tuvalu</option>
++      <option value="Ucrania">Ucrania</option>
++      <option value="Uganda">Uganda</option>
++      <option value="Uruguay">Uruguay</option>
++      <option value="Uzbekistán">Uzbekistán</option>
++      <option value="Vanuatu">Vanuatu</option>
++      <option value="Venezuela">Venezuela</option>
++      <option value="Vietnam">Vietnam</option>
++      <option value="Wallis y Futuna">Wallis y Futuna</option>
++      <option value="Yemen">Yemen</option>
++      <option value="Yibuti">Yibuti</option>
++      <option value="Zambia">Zambia</option>
++      <option value="Zimbabue">Zimbabue</option>
++            </select>
++      <input id="ae-ciudad" type="text" required maxlength="60" placeholder="Ciudad / localidad *">
++      <select id="ae-genero" required>
++        <option value="">Género *</option>
++      <option value="Noticias">Noticias</option>
++      <option value="Pop">Pop</option>
++      <option value="Pop latino">Pop latino</option>
++      <option value="Rock">Rock</option>
++      <option value="Romántica">Romántica</option>
++      <option value="Tropical">Tropical</option>
++      <option value="Salsa">Salsa</option>
++      <option value="Bachata">Bachata</option>
++      <option value="Cumbia">Cumbia</option>
++      <option value="Regional">Regional</option>
++      <option value="Vallenato">Vallenato</option>
++      <option value="Reguetón">Reguetón</option>
++      <option value="Electrónica">Electrónica</option>
++      <option value="Música clásica">Música clásica</option>
++      <option value="Cristiana">Cristiana</option>
++      <option value="Deportes">Deportes</option>
++      <option value="Hablada / Entrevistas">Hablada / Entrevistas</option>
++      <option value="Infantil">Infantil</option>
++      <option value="Jazz">Jazz</option>
++      <option value="Oldies">Oldies</option>
++      <option value="Variada">Variada</option>
++      <option value="Otra">Otra</option>
++            </select>
++      <button type="submit">Enviar para revisión</button>
++      <p id="ae-msg" role="status"></p>
++    </form>
++  </section>
++
++  <section id="agrega-podcast" class="page ae-wrap">
++    <div class="page-title"><h2>🎙️ Agrega tu podcast</h2></div>
++    <p class="ae-sub">Tu podcast en Radio Latina: en la web y en la app. Solo el feed RSS o el MP3 directo del episodio — nada inventado.</p>
++    <form id="ap-form" class="ae-form glass">
++      <input id="ap-titulo" type="text" required maxlength="80" placeholder="Título del podcast *">
++      <input id="ap-rss" type="url" required placeholder="Link del RSS o del MP3 directo *">
++      <input id="ap-portada-url" type="url" placeholder="URL de la portada (la foto de perfil real de tu podcast)">
++      <select id="ap-categoria" required>
++        <option value="">Categoría *</option>
++        <option value="Noticias">Noticias</option>
++        <option value="Deportes">Deportes</option>
++        <option value="Historia">Historia</option>
++        <option value="Humor">Humor</option>
++        <option value="Música">Música</option>
++        <option value="Misterio">Misterio</option>
++        <option value="Religiosos">Religiosos</option>
++        <option value="Motivación">Motivación</option>
++        <option value="Otra">Otra</option>
++      </select>
++      <textarea id="ap-descripcion" rows="3" maxlength="400" placeholder="Descripción corta (opcional)"></textarea>
++      <button type="submit">Enviar para revisión</button>
++      <p id="ap-msg" role="status"></p>
++    </form>
++  </section>
+ </main>
+ 
+ <nav class="bottomnav glass" aria-label="Navegación principal">
+   <button data-nav="inicio" class="bnav active"><span>🏠</span><small>Inicio</small></button>
+   <button data-nav="radio" class="bnav"><span>📻</span><small>Radio</small></button>
++  <button data-nav="podcasts" class="bnav"><span>🎙️</span><small>Podcasts</small></button>
+   <button data-nav="chat" class="bnav"><span>💬</span><small>Chat</small></button>
+   <button data-nav="info" class="bnav"><span>ℹ️</span><small>Info</small></button>
+ </nav>
+@@ -325,9 +672,10 @@
+   </div>
+ </div>
+ 
++<footer class="rl-footer"><span id="visitCount">👥 … visitas</span><span>·</span><span>Radio Latina — Tu país donde estés</span></footer>
+ <div id="toast" class="toast" role="status"></div>
+ <audio id="audio" preload="none"></audio>
+ <script src="ads-badge.js"></script>
+-<script src="app.js"></script>
++<script src="app.js?v=20260927l"></script>
+ </body>
+ </html>
+
+
+########################################################################
+PARTE 2 - PORTAL: app.js
+########################################################################
+diff --git a/app.js b/app.js   (base -> head)
+--- a/app.js (5ddcfe9 (2026-09-26 14:06 EDT, antes del build 1.9.27))
++++ b/app.js (4067de4 (2026-09-27 11:32 EDT, estado actual tras el revert))
+@@ -27,7 +27,7 @@
+   [/urbana|reggaet/, 'linear-gradient(135deg,#f43f5e,#7c2d12)']
+ ];
+ function genreGrad(g){ g=String(g||'').toLowerCase(); for(var i=0;i<GENRE_GRADS.length;i++){ if(GENRE_GRADS[i][0].test(g)) return GENRE_GRADS[i][1]; } return 'linear-gradient(135deg,#E11D48,#7c2d12)'; }
+-function initials(name){ var w=String(name||'?').trim().split(/\s+/); return (w[0].charAt(0)+(w[1]?w[1].charAt(0):'')).toUpperCase(); }
++function initials(n){ var stop=new Set(['radio','fm','am','stereo','estereo','la','el','de','del','los','las','y','en']); var w=String(n||'?').trim().split(/\s+/).filter(function(p){ return p&&!stop.has(p.toLowerCase()); }); var b=w.length?w:String(n||'?').trim().split(/\s+/).filter(Boolean); return (b.length>=2?(b[0][0]+b[1][0]):b[0].slice(0,2)).toUpperCase(); }
+ 
+ /* ---------- estado ---------- */
+ var STATIONS=[], FAVS={};
+@@ -66,7 +66,7 @@
+     playing+logoHTML(s)+
+     '<span class="station-play"><span class="pp">▶</span></span>'+
+     '<span class="genre-tag">'+esc(s.genre||'Radio')+'</span>'+
+-    '<span class="station-info"><b>'+esc(s.name)+'</b><span>'+esc(s.city?s.city+', ':'')+esc(s.country||'')+'</span></span>'+
++    '<span class="station-info"><span>'+esc(s.city||s.country||'')+'</span><span class="live-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="1.6" fill="#00E676" stroke="none"/><path d="M12 15v6"/><path d="M8.2 9.2a5.4 5.4 0 0 1 7.6 0"/><path d="M5.8 6.8a8.8 8.8 0 0 1 12.4 0"/></svg></span></span>'+
+   '</button>';
+ }
+ function findStation(name){ for(var i=0;i<STATIONS.length;i++) if(STATIONS[i].name===name) return STATIONS[i]; return null; }
+@@ -456,7 +456,7 @@
+ el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') heroGo(); });
+ 
+ /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
+-var auth=null, db=null, fbReady=false, signInPromise=null, chatStarted=false;
++var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, fbInitPromise=null, chatStarted=false;
+ var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
+ var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
+ var unsub=null, roomUnsub=null, currentRoom=null;
+@@ -467,11 +467,13 @@
+ 
+ function fbInit(){
+   if(fbReady) return Promise.resolve(true);
+-  return fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
+-    firebase.initializeApp(cfg);
+-    auth=firebase.auth(); db=firebase.firestore();
++  if(fbInitPromise) return fbInitPromise; /* race-safe 2026-09-27: un init en vuelo lo comparten todos (patrón signInPromise) */
++  fbInitPromise=fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(cfg){
++    try{ firebase.initializeApp(cfg); }catch(e){ if(String((e&&e.code)||'').indexOf('duplicate-app')===-1) throw e; }
++    auth=firebase.auth(); db=firebase.firestore(); storage=firebase.storage();
+     fbReady=true; return true;
+-  }).catch(function(){ toast('⚠️ No se pudo conectar con el chat.'); return false; });
++  }).catch(function(){ fbInitPromise=null; toast('⚠️ No se pudo conectar con el chat.'); return false; });
++  return fbInitPromise;
+ }
+ function ensureSignedIn(){
+   if(!fbReady) return Promise.resolve(false);
+@@ -511,14 +513,19 @@
+   var time=formatTime(data.createdAt);
+   var flag=data.pais?flagEmoji(String(data.pais))+' ':'';
+   var sx=data.sexo?' '+sexIcon(String(data.sexo)):'';
+-  var txt=data.texto||data.text||'';
++  /* Susurro premium: solo autor y destinatario ven el texto real */
++  var esSusurro=!!data.esSusurro, paraNick=data.susurroPara||'';
++  var puedoVer=!esSusurro||isOwn||paraNick===mine;
++  var txt=puedoVer?(data.texto||data.text||''):'🔒 Mensaje privado';
++  var susTag=esSusurro?'<span class="chat-susurro-tag">🔒 '+(puedoVer?('Privado · '+esc(paraNick)):'Privado')+'</span>':'';
+   var acts='';
+   if(d._room==='general'){
+     acts='<div class="chat-msg-actions"><button class="chat-flag" data-action="report" data-id="'+esc(d.id)+'" data-nick="'+esc(nick)+'">Reportar</button>'+
+       '<button class="chat-flag" data-action="invite">Invitar</button>'+
+-      (isOwn?'':'<button class="chat-flag" data-action="block" data-nick="'+esc(nick)+'">Bloquear</button>')+'</div>';
+-  }
+-  return '<div class="chat-msg'+(isOwn?' own':'')+'"><div class="chat-msg-head"><b><span class="avatar">'+esc(initials(nick))+'</span>'+flag+esc(nick)+sx+'</b>'+(time?'<span>'+esc(time)+'</span>':'')+'</div><p>'+esc(txt)+'</p>'+acts+'</div>';
++      (isOwn?'':'<button class="chat-flag" data-action="block" data-nick="'+esc(nick)+'">Bloquear</button>')+
++      (isOwn?'':'<button class="chat-flag" data-action="whisper" data-nick="'+esc(nick)+'">🔒 Privado</button>')+'</div>';
++  }
++  return '<div class="chat-msg'+(isOwn?' own':'')+'"><div class="chat-msg-head"><b><span class="avatar">'+esc(initials(nick))+'</span>'+flag+esc(nick)+sx+'</b>'+(time?'<span>'+esc(time)+'</span>':'')+susTag+'</div><p>'+esc(txt)+'</p>'+acts+'</div>';
+ }
+ 
+ /* ---------- sala general ---------- */
+@@ -530,6 +537,7 @@
+       .onSnapshot(function(snap){
+         var docs=[]; snap.forEach(function(d){ d._room='general'; docs.push(d); });
+         renderGeneral(docs.reverse());
++        noteWhisper(docs);
+         if(meta) meta.textContent='Sala general · '+(rlChatProfile().nick||'Oyente');
+       },function(){ if(meta) meta.textContent='No se pudieron cargar los mensajes.'; });
+   }catch(e){ if(meta) meta.textContent='No se pudieron cargar los mensajes.'; }
+@@ -558,6 +566,38 @@
+     _lastMsgAt=now; rlCountMsg(); input.value='';
+   }catch(e){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+ }
++/* ---------- susurro premium (privado en la sala general) ---------- */
++var seenWhisper={};
++function noteWhisper(docs){
++  var mine=rlChatProfile().nick||'';
++  docs.forEach(function(d){
++    var data=d.data()||{}, ya=seenWhisper[d.id];
++    seenWhisper[d.id]=1;
++    if(ya) return;
++    if(data.esSusurro&&data.susurroPara===mine&&(data.apodo||'')!==mine){
++      toast('🔒 '+(data.apodo||'Alguien')+' te susurró en privado.');
++    }
++  });
++}
++async function sendWhisper(targetNick){
++  if(!targetNick) return;
++  if(!(await rlIsPremiumWeb())){ openPremium(); toast('👑 Solo Premium puede enviar mensajes privados.'); return; }
++  if(rlNeedProfile()){ openProfile(); toast('👤 Primero crea tu perfil del chat.'); return; }
++  var text=window.prompt('Mensaje privado para '+targetNick+':','');
++  if(text==null) return;
++  text=String(text).trim().slice(0,MAX_TEXT);
++  if(!text){ toast('Escribe un mensaje antes de enviarlo.'); return; }
++  var now=Date.now();
++  if(now-_lastMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
++  if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
++  if(!(await ensureSignedIn())) return;
++  var prof=rlChatProfile();
++  try{
++    await db.collection('rooms/general/messages').add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), esSusurro:true, susurroPara:targetNick, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
++    _lastMsgAt=now;
++    toast('🔒 Privado enviado a '+targetNick+'.');
++  }catch(e){ toast(e && e.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
++}
+ el('chatForm').addEventListener('submit',function(e){ e.preventDefault(); sendGeneral(); });
+ el('chatMessages').addEventListener('click',async function(e){
+   var t=e.target.closest?e.target.closest('[data-action]'):null; if(!t) return;
+@@ -569,6 +609,7 @@
+     if(unsub){ try{unsub();}catch(e3){} unsub=null; } subscribeGeneral();
+   }
+   if(action==='invite'){ openInviteModal(); return; }
++  if(action==='whisper'){ sendWhisper(nick); return; }
+   if(action==='report'){
+     var mid=t.getAttribute('data-id'); if(!mid) return;
+     if(!window.confirm('¿Reportar este mensaje como inapropiado?')) return;
+@@ -696,7 +737,7 @@
+   try{
+     await roomMessagesRef(currentRoom.code).add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), uid:auth.currentUser.uid, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+     _lastRoomMsgAt=now; rlCountMsg(); input.value='';
+-  }catch(err){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
++  }catch(err){ toast(err && err.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+ });
+ el('roomInviteBtn').addEventListener('click',function(){
+   if(!currentRoom) return;
+@@ -787,16 +828,45 @@
+     if(!p.exists||p.data().premium!==true){ msg.textContent='Ese código ya no es premium.'; return; }
+     try{ localStorage.setItem('rl_premium_uid',uid); }catch(e){}
+     premiumCache=true;
++    await rlAlignPremiumUid(uid); /* FIX-PREMIUM-ALIGN: alinea uid anonimo con premium */
+     msg.textContent='✅ Premium vinculado. Ya puedes enviar mensajes privados.';
+     toast('👑 Premium vinculado');
+   }catch(e){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; }
+ });
++
++/* ---------- FIX-PREMIUM-ALIGN (Tiger 2026-09-27) ----------
++   El link-code guarda en localStorage el uid DE LA APP, pero el navegador
++   escribe con su uid ANONIMO. Las reglas exigen premium_uids/{request.auth.uid}.
++   Esta funcion marca el uid propio del navegador tras validar el codigo. */
++async function rlAlignPremiumUid(linkedUid){
++  try{
++    var luid = linkedUid || null;
++    try{ luid = luid || localStorage.getItem('rl_premium_uid'); }catch(e){}
++    if(!luid) return false; /* gratis sin vinculo: cero lecturas extra */
++    if(!(await fbInit())) return false;
++    await ensureSignedIn();
++    var me = (typeof auth!=='undefined' && auth.currentUser) ? auth.currentUser.uid : null;
++    if(!me) return false;
++    var mine = await db.collection('premium_uids').doc(me).get();
++    if(mine.exists && mine.data().premium === true) return true; /* ya alineado */
++    var p = await db.collection('premium_uids').doc(luid).get();
++    if(!p.exists || p.data().premium !== true) return false;
++    await db.collection('premium_uids').doc(me).set({
++      premium: true,
++      vinculadoDe: luid,
++      origen: 'web-link',
++      creado: firebase.firestore.FieldValue.serverTimestamp()
++    });
++    return true;
++  }catch(e){ return false; }
++}
+ 
+ /* ---------- arranque del chat ---------- */
+ async function initChat(){
+   if(chatStarted) return; chatStarted=true;
+   var ok=await fbInit(); if(!ok) return;
+   await ensureSignedIn();
++  await rlAlignPremiumUid(null); /* FIX-PREMIUM-ALIGN: autocura navegadores ya vinculados */
+   subscribeGeneral(); renderMyRooms();
+ }
+ 
+@@ -814,4 +884,348 @@
+ loadAvisos();
+ renderResume();
+ renderHistoryRow();
++
++/* Contador de visitas del portal (footer). Va DENTRO del IIFE principal:
++   usa fbInit()/db (no son globales). */
++(function(){
++  try{
++    var el = document.getElementById('visitCount');
++    if(!el || !window.firebase) return;
++    fbInit().then(function(ok){
++      if(!ok || !db) return;
++      var ref = db.doc('estadisticas/visitas');
++      /* La regla Firestore solo permite: crear con total==1, o actualizar con total==anterior+1.
++         Por eso se lee primero y se escribe el valor literal (sin FieldValue.increment). */
++      ref.get().then(function(s){
++        if(!s.exists){ return ref.set({total: 1}).then(function(){ return 1; }); }
++        var t = (s.data().total || 0) + 1;
++        return ref.update({total: t}).then(function(){ return t; });
++      }).then(function(t){
++        el.textContent = '\uD83D\uDC65 ' + Number(t).toLocaleString('es-CO') + ' visitas';
++      }).catch(function(){});
++    });
++  }catch(e){}
+ })();
++
++/* BLOQUE 1B v3 — Envío del formulario "Agrega tu emisora" (portal).
++   Pegar AL FINAL de app.js (una sola vez).
++   v3: ya NO asume que db esté inicializado; llama a fbInit() (global en app.js)
++   dentro del submit, así el botón funciona aunque el usuario nunca haya abierto el chat.
++   Plan Spark (sin bucket): el logo por archivo no se sube; se guarda logo_url
++   (la URL que pegó el dueño) o '' y el portal/app muestran un placeholder.
++   Si en el futuro hay bucket Blaze: inicializar storage y subir a logos_pendientes/<id>.png */
++(function(){
++  var form=document.getElementById('ae-form');
++  if(!form) return;
++  if(form.dataset.aeWired) return;
++  form.dataset.aeWired='1';
++  form.addEventListener('submit', async function(e){
++    e.preventDefault();
++    var msg=document.getElementById('ae-msg');
++    function v(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
++    var url=v('ae-url');
++    if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(url)){
++      msg.textContent='Necesitamos el link de audio directo, no el del video.';
++      return;
++    }
++    var logoUrl=v('ae-logo-url');
++    if(logoUrl && !/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(logoUrl)){
++      msg.textContent='La URL del logo no parece una imagen válida.';
++      return;
++    }
++    msg.textContent='Enviando...';
++    try{
++      if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
++      var id='p'+Date.now().toString(36);
++      var fileEl=document.getElementById('ae-logo');
++      var file=fileEl&&fileEl.files?fileEl.files[0]:null;
++      if(file && (file.type.indexOf('image/')!==0||file.size>2*1024*1024)){
++        throw new Error('Logo inválido (imagen, máx 2MB).');
++      }
++      await db.collection('emisoras_pendientes').doc(id).set({
++        nombre:v('ae-nombre'),
++        stream_url:url,
++        logo_url:logoUrl||'',
++        pais:v('ae-pais'),
++        ciudad:v('ae-ciudad'),
++        genero:v('ae-genero'),
++        estado:'pendiente',
++        creado:firebase.firestore.FieldValue.serverTimestamp()
++      });
++      msg.textContent='¡Gracias! Tu emisora está en revisión.';
++      form.reset();
++    }catch(err){
++      msg.textContent='Error: '+(err&&err.message?err.message:'desconocido');
++    }
++  });
++})();
++/* ===== PODCASTS v1 (dentro del IIFE principal: ve fbInit/db/toast/playStation) ===== */
++/* ===== PODCASTS v1 — Espacio Podcasts aditivo (portal). Luz verde de Tiger 2026-09-27 ~02:22.
++   Fix scope 2026-09-27 ~05:50 (causa raíz de Tiger): el bloque vive DENTRO del IIFE principal;
++   antes era un IIFE hermano donde fbInit/db no existían -> ReferenceError tragado por el catch.
++   Fix race fbInit 2026-09-27 (hipótesis de Tiger, verificada en el código): fbInit race-safe con promesa en
++   vuelo (espeja el patrón signInPromise: "si hay un init en curso, devolverla") + cinturón contra duplicate-app;
++   la promesa se reinicia en el catch para permitir reintento real; podLoaded=true solo tras éxito, así un
++   fallo transitorio reintenta al siguiente clic en vez de dejar la sección en 0 para siempre.
++   100% aditivo: no toca radio/chat/emisoras/premium. Logo D2 Rosa Fuego elegido por Jeremy.
++   Datos: colección Firestore `podcasts` (solo aprobado==true). Sin aprobados -> estado vacío con CTA. NADA inventado.
++   Plan Spark (sin Storage): portadas por URL (igual que logos de emisoras). Reglas Firestore: preparadas aparte,
++   NO publicadas sin el OK directo de Jeremy (límite duro acordado con Tiger).
++   Episodios: array `episodios` del doc (RSS parseado en la aprobación; refresco por script/Cloud Function).
++   La reproducción reutiliza el reproductor actual (fase 1). */
++  var PODCASTS=[], podQ='', podCat='';
++  var POD_CATS=['Todos','Noticias','Deportes','Historia','Humor','Música','Misterio','Religiosos','Motivación','Otra'];
++  var D2='assets/logos/podcast-d2-rosa-fuego.svg';
++  var podLoaded=false;
++
++  function pel(id){ return document.getElementById(id); }
++  function pes(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
++  function podInitials(t){ var w=String(t||'?').trim().split(/\s+/); return ((w[0]||'?').charAt(0)+(w[1]?w[1].charAt(0):'')).toUpperCase(); }
++
++  function podCardHTML(p){
++    var port=p.portada_url||'';
++    var cover=port
++      ? '<img src="'+pes(port)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;pod-fallback&quot;>'+pes(podInitials(p.titulo))+'</span>\'">'
++      : '<span class="pod-fallback">'+pes(podInitials(p.titulo))+'</span>';
++    var eps=(p.episodios&&p.episodios.length)?p.episodios.length:0;
++    var meta=eps?(eps+(eps===1?' episodio':' episodios')):'Próximamente';
++    return '<button class="pod-card" data-pod="'+pes(p.id)+'">'+
++      '<span class="pod-cover">'+cover+
++      '<span class="pod-play"><span class="pp">▶</span></span>'+
++      '<span class="pod-cat">'+pes(p.categoria||'Podcast')+'</span></span>'+
++      '<span class="pod-body"><b>'+pes(p.titulo)+'</b><small>'+pes(meta)+'</small></span>'+
++    '</button>';
++  }
++
++  function applyPodFilters(){
++    var q=podQ.trim().toLowerCase();
++    var list=PODCASTS.filter(function(p){
++      if(podCat&&podCat!=='Todos'&&String(p.categoria||'')!==podCat) return false;
++      if(q&&(String(p.titulo||'')+' '+String(p.descripcion||'')).toLowerCase().indexOf(q)===-1) return false;
++      return true;
++    });
++    var grid=pel('podGrid'), empty=pel('podEmpty');
++    if(!grid||!empty) return;
++    grid.innerHTML=list.map(podCardHTML).join('');
++    empty.hidden=list.length>0;
++    grid.querySelectorAll('.pod-card').forEach(function(c){
++      c.addEventListener('click',function(){ openPodDetail(c.getAttribute('data-pod')); });
++    });
++  }
++
++  function renderPodChips(){
++    var box=pel('podCatChips'); if(!box||box.dataset.podWired) return; box.dataset.podWired='1';
++    box.innerHTML='';
++    POD_CATS.forEach(function(c,i){
++      var b=document.createElement('button');
++      b.className='chip'+(i===0?' active':''); b.type='button'; b.textContent=c;
++      b.addEventListener('click',function(){
++        podCat=(c==='Todos')?'':c;
++        box.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('active'); });
++        b.classList.add('active');
++        applyPodFilters();
++      });
++      box.appendChild(b);
++    });
++    var q=pel('pq');
++    if(q&&!q.dataset.podWired){ q.dataset.podWired='1'; q.addEventListener('input',function(){ podQ=q.value; applyPodFilters(); }); }
++  }
++
++  async function loadPodcasts(){
++    if(podLoaded) return;
++    renderPodChips();
++    try{
++      if(!(await fbInit())) throw new Error('sin conexión');
++      var snap=await db.collection('podcasts').where('aprobado','==',true).get();
++      PODCASTS=[];
++      snap.forEach(function(d){ var x=d.data()||{}; x.id=d.id; PODCASTS.push(x); });
++      PODCASTS.sort(function(a,b){ return String(a.titulo||'').localeCompare(String(b.titulo||'')); });
++      podLoaded=true; /* solo tras éxito: un fallo transitorio reintenta al siguiente clic (race fbInit 2026-09-27) */
++    }catch(e){ if(window.console&&console.error)console.error('[podcasts] loadPodcasts:',e); PODCASTS=[]; }
++    applyPodFilters();
++  }
++
++  function openPodDetail(id){
++    var p=null; for(var i=0;i<PODCASTS.length;i++) if(PODCASTS[i].id===id) p=PODCASTS[i];
++    if(!p) return;
++    var d=pel('podDetail'); if(!d) return;
++    pel('pdCover').src=p.portada_url||D2;
++    pel('pdCover').onerror=function(){ this.onerror=null; this.src=D2; };
++    pel('pdTitle').textContent=p.titulo||'';
++    var eps=p.episodios||[];
++    pel('pdMeta').textContent=(p.categoria||'Podcast')+(eps.length?(' · '+eps.length+(eps.length===1?' episodio':' episodios')):'');
++    pel('pdDesc').textContent=p.descripcion||'';
++    var box=pel('pdEps'); box.innerHTML='';
++    if(!eps.length){ box.innerHTML='<p class="muted">Aún no hay episodios publicados para este podcast.</p>'; }
++    eps.forEach(function(ep,i){
++      var b=document.createElement('button');
++      b.className='pod-ep'; b.type='button';
++      b.innerHTML='<span class="ep-play">▶</span><span class="ep-info"><b>'+pes(ep.titulo||('Episodio '+(i+1)))+'</b><small>'+pes(ep.fecha||'')+(ep.duracion?(' · '+pes(ep.duracion)):'')+'</small></span>';
++      (function(ep2){ b.addEventListener('click',function(){ playPodcastEpisode(p,ep2); }); })(ep);
++      box.appendChild(b);
++    });
++    d.hidden=false;
++    d.scrollIntoView({behavior:'smooth',block:'start'});
++  }
++
++  /* Reutiliza el reproductor actual (fase 1): el episodio es audio directo. */
++  function playPodcastEpisode(p,ep){
++    playStation({
++      name:(p.titulo||'Podcast')+' · '+(ep.titulo||'Episodio'),
++      stream:ep.audio,
++      logo:p.portada_url||'',
++      genre:'Podcast',
++      city:'',
++      country:p.categoria||'',
++      _podcast:true
++    });
++    toast('🎙️ Reproduciendo: '+(ep.titulo||'Episodio'));
++  }
++
++  /* Navegación: cargar podcasts al abrir la página */
++  document.querySelectorAll('[data-nav="podcasts"]').forEach(function(b){
++    b.addEventListener('click',function(){ loadPodcasts(); });
++  });
++  var pdc=pel('podDetailClose');
++  if(pdc) pdc.addEventListener('click',function(){ pel('podDetail').hidden=true; });
++
++  /* Página "Agrega tu podcast" (misma pauta que "Agrega tu emisora") */
++  function openAgregaPodcast(){
++    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
++    var sec=pel('agrega-podcast'); if(sec) sec.classList.add('active');
++    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
++    var a=pel('navAgregaPod'); if(a) a.classList.add('active');
++    window.scrollTo({top:0,behavior:'smooth'});
++    if(window.fbInit) fbInit();
++  }
++  ['podGoAgrega','podGoAgrega2'].forEach(function(id){
++    var b=pel(id); if(b) b.addEventListener('click',openAgregaPodcast);
++  });
++  var nap=pel('navAgregaPod');
++  if(nap) nap.addEventListener('click',function(e){ e.preventDefault(); openAgregaPodcast(); });
++
++  /* Envío del formulario "Agrega tu podcast" (portal).
++     Colección: podcasts_pendientes (Jeremy aprueba en 1 clic desde Pendientes).
++     Plan Spark (sin Storage): portada por URL, igual que el logo de emisoras.
++     RSS preferido o MP3 directo; YouTube/Twitch/TikTok rechazados (orden de Jeremy). */
++  var form=pel('ap-form');
++  if(form&&!form.dataset.apWired){
++    form.dataset.apWired='1';
++    form.addEventListener('submit',async function(e){
++      e.preventDefault();
++      var msg=pel('ap-msg');
++      function v(id){ var x=pel(id); return x?x.value.trim():''; }
++      var feed=v('ap-rss');
++      if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(feed)){
++        msg.textContent='Necesitamos el link del RSS o del MP3 directo, no el del video.';
++        return;
++      }
++      var port=v('ap-portada-url');
++      if(port&&!/^https?:\/\/.+\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(port)){
++        msg.textContent='La URL de la portada no parece una imagen válida.';
++        return;
++      }
++      msg.textContent='Enviando...';
++      try{
++        if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
++        var id='pod'+Date.now().toString(36);
++        await db.collection('podcasts_pendientes').doc(id).set({
++          titulo:v('ap-titulo'),
++          rss_url:feed,
++          portada_url:port||'',
++          categoria:v('ap-categoria'),
++          descripcion:v('ap-descripcion'),
++          estado:'pendiente',
++          creado:firebase.firestore.FieldValue.serverTimestamp()
++        });
++        msg.textContent='¡Gracias! Tu podcast está en revisión.';
++        form.reset();
++      }catch(err){ msg.textContent='Error: '+(err&&err.message?err.message:'desconocido'); }
++    });
++  }
++
++})();
++
++(function(){
++  var a=document.getElementById('navAgrega');
++  if(!a) return;
++  a.addEventListener('click',function(e){
++    e.preventDefault();
++    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
++    var sec=document.getElementById('agrega-emisora');
++    if(sec) sec.classList.add('active');
++    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
++    a.classList.add('active');
++    window.scrollTo({top:0,behavior:'smooth'});
++    if(window.fbInit) fbInit();
++  });
++})();
++
++/* ===== CONTADOR-ANIM v1: el número sube contando (0 -> N) al cargar =====
++   Pegar AL FINAL de app.js (una sola vez). 100% aditivo: solo observa el
++   #visitCount y anima cuando llega el número real. Si Firebase falla, no hace nada. */
++(function(){
++  var el=document.getElementById('visitCount');
++  if(!el||!('MutationObserver' in window)||!window.requestAnimationFrame) return;
++  var done=false;
++  function fmt(n){ try{return Number(n).toLocaleString('es-CO');}catch(e){return String(n);} }
++  function animate(to){
++    var t0=null,dur=1100;
++    function step(ts){
++      if(!t0) t0=ts;
++      var p=Math.min(1,(ts-t0)/dur),e=1-Math.pow(1-p,3);
++      el.innerHTML='\uD83D\uDC65 <b class="vc-num">'+fmt(Math.round(to*e))+'</b> visitas';
++      if(p<1) requestAnimationFrame(step);
++    }
++    requestAnimationFrame(step);
++  }
++  new MutationObserver(function(){
++    if(done) return;
++    var m=el.textContent.match(/(\d[\d.]*)/);
++    if(m){ done=true; animate(parseInt(m[1].replace(/\./g,''),10)||0); }
++  }).observe(el,{childList:true,characterData:true,subtree:true});
++})();
++
++
++/* PREMIUM-UX v1 (JS) — Experiencia premium inmediata post-código. Pegar al FINAL de app.js (una sola vez). */
++(function(){
++  function applyPremiumTheme(){
++    if(document.body.classList.contains('rl-premium')) return;
++    document.body.classList.add('rl-premium');
++    if(!document.getElementById('rlPremiumBadge')){
++      var brand=document.querySelector('.topbar .brand');
++      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">👑 PREMIUM</span>');
++    }
++  }
++  function premiumWelcome(){
++    applyPremiumTheme();
++    try{ if(typeof closeModal==='function') closeModal('premiumModal'); }catch(e){}
++    if(document.getElementById('rlPremiumOverlay')) return;
++    var ov=document.createElement('div');
++    ov.id='rlPremiumOverlay';
++    ov.innerHTML='<div class="rl-ov-card"><span class="rl-ov-crown">👑</span><h2>¡Ya eres <span>Premium</span>!</h2><p>Tu código quedó vinculado en este navegador.</p><p>Ya puedes enviar mensajes privados en el chat.</p><div class="rl-ov-tap">Toca para continuar</div></div>';
++    function dismiss(){ if(!ov.parentNode) return; ov.classList.add('rl-ov-out'); setTimeout(function(){ ov.remove(); },320); }
++    ov.addEventListener('click',dismiss);
++    setTimeout(dismiss,4500);
++    document.body.appendChild(ov);
++  }
++  /* El handler existente escribe "Premium vinculado" en #linkCodeMsg al vincular: lo observamos. */
++  function watchLink(){
++    var msg=document.getElementById('linkCodeMsg');
++    if(!msg||!window.MutationObserver) return;
++    new MutationObserver(function(){
++      if(/premium vinculado/i.test(msg.textContent||'')) premiumWelcome();
++    }).observe(msg,{childList:true,characterData:true,subtree:true});
++  }
++  /* Al cargar: si ya había un código vinculado y sigue vigente, recuperar el tema premium. */
++  function restorePremium(){
++    try{
++      var uid=null; try{ uid=localStorage.getItem('rl_premium_uid'); }catch(e){}
++      if(!uid||typeof rlIsPremiumWeb!=='function') return;
++      rlIsPremiumWeb().then(function(ok){ if(ok) applyPremiumTheme(); }).catch(function(){});
++    }catch(e){}
++  }
++  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ watchLink(); restorePremium(); });
++  else { watchLink(); restorePremium(); }
++
++})();
+
+
+########################################################################
+PARTE 3 - PORTAL: styles.css
+########################################################################
+diff --git a/styles.css b/styles.css   (base -> head)
+--- a/styles.css (5ddcfe9 (2026-09-26 14:06 EDT, antes del build 1.9.27))
++++ b/styles.css (4067de4 (2026-09-27 11:32 EDT, estado actual tras el revert))
+@@ -147,7 +147,7 @@
+ .station-art{position:relative;aspect-ratio:1/.92;display:flex;align-items:center;justify-content:center;overflow:hidden}
+ .station-art img{width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));transition:transform .25s}
+ .station-card:hover .station-art img{transform:scale(1.07)}
+-.station-art .art-fallback{font-family:var(--font-t);font-weight:800;font-size:3rem;color:rgba(255,255,255,.92);text-shadow:0 4px 18px rgba(0,0,0,.5)}
++.station-art .art-fallback{font-family:var(--font-t);font-weight:800;font-size:3rem;color:#E11D48;text-shadow:0 2px 12px rgba(225,29,72,.25)}
+ .station-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,5,10,.45);opacity:0;transition:.22s;backdrop-filter:blur(2px)}
+ .station-card:hover .station-play{opacity:1}
+ .station-play .pp{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f43f5e,#be123c);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 26px rgba(225,29,72,.6);transform:scale(.85);transition:.22s}
+@@ -258,6 +258,8 @@
+ .modal-card input,.modal-card select{width:100%;background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);font-size:.95rem;font-family:inherit;outline:0;margin-top:6px}
+ .modal-card input:focus,.modal-card select:focus{border-color:rgba(225,29,72,.6)}
+ .modal-card select option{background:#17171f}
++.ae-form select option{background:#17171f;color:#fff}
++[data-theme="light"].ae-form select option{background:#ffffff;color:#16161d}
+ .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+ .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+ 
+@@ -313,3 +315,121 @@
+ .link-row{display:flex;gap:8px;margin:8px 0}
+ .link-row input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font-size:16px;letter-spacing:2px;text-transform:uppercase}
+ .tiny{font-size:12px}
++.rl-footer{display:flex;gap:8px;justify-content:center;align-items:center;padding:20px 12px 28px;color:var(--muted,#9aa);font-size:.85rem;text-align:center}
++#visitCount{font-weight:700;color:var(--ink,#fff)}
++
++/* AE-STYLE v1 — Rediseño "Agrega tu emisora". Pegar al FINAL de styles.css. */
++.ae-wrap{max-width:640px;margin:0 auto}
++.ae-sub{color:var(--muted);margin:2px 0 18px;font-size:14px}
++.ae-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:22px;border-radius:var(--radius);box-shadow:var(--shadow)}
++.ae-form input[type=text],.ae-form input[type=url],.ae-form select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box}
++.ae-form input::placeholder{color:var(--muted)}
++.ae-form input:focus,.ae-form select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(225,29,72,.25)}
++.ae-form #ae-nombre,.ae-form #ae-url,.ae-form #ae-logo-url,.ae-form #ae-genero,.ae-form button[type=submit],.ae-form #ae-msg{grid-column:1/-1}
++.ae-file{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border:1.5px dashed var(--line);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .2s,color .2s}
++.ae-file:hover{border-color:var(--brand);color:var(--ink)}
++.ae-file input{max-width:210px;color:var(--muted)}
++.ae-form button[type=submit]{padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#f43f5e,#E11D48 60%,#be123c);box-shadow:0 8px 24px rgba(225,29,72,.4);transition:transform .15s,box-shadow .2s}
++.ae-form button[type=submit]:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(225,29,72,.5)}
++.ae-form #ae-msg{min-height:20px;font-size:13px;color:var(--muted);text-align:center;margin:0}
++.ae-form select option{background:#17171f;color:#fff}
++[data-theme="light"] .ae-form input[type=text],[data-theme="light"] .ae-form input[type=url],[data-theme="light"] .ae-form select{background:#f6f4f1}
++[data-theme="light"] .ae-form select option{background:#ffffff;color:#16161d}
++@media(max-width:560px){.ae-form{grid-template-columns:1fr;padding:16px}}
++
++
++/* ===== CONTADOR-STYLE v1: contador de visitas elaborado =====
++   Pegar AL FINAL de styles.css (una sola vez). Solo agrega, no cambia nada
++   existente. Funciona en tema oscuro y claro, y en celular. */
++.rl-footer{padding:1.15rem .8rem;}
++.rl-footer #visitCount{
++  display:inline-flex;align-items:center;gap:.5em;
++  font-size:1.04rem;font-weight:700;color:#fff;white-space:nowrap;
++  background:linear-gradient(135deg,#fb4d6d 0%,#e11d48 55%,#9f1239 100%);
++  padding:.45em 1.05em;border-radius:999px;
++  border:1px solid rgba(255,255,255,.22);
++  box-shadow:0 6px 18px rgba(225,29,72,.38),inset 0 1px 0 rgba(255,255,255,.28);
++  font-variant-numeric:tabular-nums;letter-spacing:.015em;
++}
++.rl-footer #visitCount .vc-num{
++  font-size:1.3em;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.25);
++}
++[data-theme="light"] .rl-footer #visitCount{
++  box-shadow:0 6px 16px rgba(225,29,72,.28),inset 0 1px 0 rgba(255,255,255,.35);
++}
++@media(max-width:560px){
++  .rl-footer #visitCount{font-size:.95rem;}
++}
++
++
++/* PREMIUM-UX v1 (CSS) — Experiencia premium post-código. Pegar al FINAL de styles.css. */
++.rl-premium-badge{display:inline-flex;align-items:center;margin-left:10px;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.06em;color:#1a1005;background:linear-gradient(135deg,#fde68a,#fbbf24 55%,#d97706);box-shadow:0 4px 14px rgba(251,191,36,.45);animation:rlBadgeShine 2.6s ease-in-out infinite;white-space:nowrap}
++@keyframes rlBadgeShine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
++#rlPremiumOverlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(225,29,72,.30),rgba(10,10,18,.96) 70%);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:rlOvIn .35s ease;cursor:pointer}
++#rlPremiumOverlay .rl-ov-card{text-align:center;max-width:88vw;padding:38px 46px;border-radius:24px;background:rgba(255,255,255,.06);border:1px solid rgba(251,191,36,.45);box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 60px rgba(251,191,36,.15);animation:rlOvPop .45s cubic-bezier(.2,1.4,.4,1)}
++#rlPremiumOverlay .rl-ov-crown{font-size:64px;display:block;animation:rlCrownBounce 1.6s ease-in-out infinite}
++@keyframes rlCrownBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
++#rlPremiumOverlay h2{margin:14px 0 8px;font-size:26px;color:#fff}
++#rlPremiumOverlay h2 span{background:linear-gradient(135deg,#fde68a,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}
++#rlPremiumOverlay p{margin:0 0 4px;color:rgba(255,255,255,.78);font-size:14px}
++#rlPremiumOverlay .rl-ov-tap{margin-top:18px;font-size:12px;color:rgba(255,255,255,.45)}
++@keyframes rlOvIn{from{opacity:0}to{opacity:1}}
++@keyframes rlOvPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
++#rlPremiumOverlay.rl-ov-out{opacity:0;transition:opacity .3s}
++@media(max-width:560px){.rl-premium-badge{margin-left:6px;padding:5px 9px;font-size:11px}#rlPremiumOverlay .rl-ov-card{padding:28px 24px}#rlPremiumOverlay h2{font-size:22px}}
++
++
++/* Susurro premium en el chat general */
++.chat-susurro-tag{font-size:11px;color:#f5c542;margin-left:8px;font-weight:600;white-space:nowrap;}
++
++/* TARJETAS-V2 (spec 2026-09-27, aprobado por Jeremy): tile 3D protagonista, antena EN VIVO, ciudad uniforme */
++.station-art{background:linear-gradient(180deg,#fff,#eef0f5)!important;border-radius:18px;margin:10px 10px 0;aspect-ratio:4/3;box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.9);padding:12px}
++.station-art img{width:76%!important;height:76%!important}
++.genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
++.station-info b{display:none}
++.station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:var(--ink);white-space:nowrap}
++.live-pill{display:block;text-align:center;margin-top:2px;line-height:1.4;background:none;padding:0;filter:drop-shadow(0 0 6px rgba(0,230,118,.8));animation:livePulse 2.4s ease-in-out infinite}
++@keyframes livePulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.12);opacity:1}}
++
++/* Auditoría Tiger 2026-09-27 01:50: antena SVG inline verde real (emoji 📡 NO teñía) + selector .live-pill + glow drop-shadow */
++
++/* ===== ESPACIO PODCASTS v1 — D2 Rosa Fuego (aditivo, 2026-09-27) =====
++   Logo elegido por Jeremy: D2 · Onda Humana — Rosa Fuego (#f472b6→#ec4899→#E11D48).
++   Aditivo: no toca nada de radio/chat/emisoras. */
++.pod-hero{display:flex;gap:20px;align-items:center;padding:30px 6px 12px}
++.pod-hero-logo{width:88px;height:88px;flex:none;filter:drop-shadow(0 8px 16px rgba(225,29,72,.4))}
++.pod-hero h2{font-size:1.8rem;margin:0 0 4px}
++.pod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-top:16px}
++.pod-card{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid rgba(236,72,153,.22);background:#fff;color:#16161d;cursor:pointer;transition:transform .2s,box-shadow .25s;text-align:left;padding:0;box-shadow:0 6px 18px rgba(0,0,0,.10)}
++.pod-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.35),0 0 0 1px rgba(236,72,153,.45)}
++.pod-cover{position:relative;aspect-ratio:1/1;overflow:hidden;display:block;background:linear-gradient(135deg,#f472b6,#ec4899 55%,#E11D48)}
++.pod-cover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
++.pod-card:hover .pod-cover img{transform:scale(1.06)}
++.pod-fallback{display:flex;width:100%;height:100%;align-items:center;justify-content:center;font-family:var(--font-t);font-weight:800;font-size:3rem;color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.4)}
++.pod-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,5,12,.35);opacity:0;transition:.22s}
++.pod-card:hover .pod-play{opacity:1}
++.pod-play .pp{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#E11D48);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;box-shadow:0 8px 26px rgba(225,29,72,.6);transform:scale(.85);transition:.22s}
++.pod-card:hover .pod-play .pp{transform:scale(1)}
++.pod-cat{position:absolute;bottom:8px;left:8px;font-size:.68rem;font-weight:700;background:rgba(10,5,12,.62);color:#fff;padding:3px 9px;border-radius:999px}
++.pod-body{padding:12px 14px 14px;display:block}
++.pod-body b{display:block;font-size:.92rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#16161d}
++.pod-body small{color:#8a8a94;font-size:.78rem}
++/* Detalle del podcast */
++.pod-detail{border-radius:20px;padding:22px;margin-top:22px;position:relative}
++.pod-detail-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
++.pod-detail-head img{width:130px;height:130px;border-radius:18px;object-fit:cover;box-shadow:0 10px 30px rgba(225,29,72,.25);flex:none}
++.pod-detail-head h3{font-size:1.25rem;margin-bottom:4px}
++.pod-desc{margin-top:8px;font-size:.93rem}
++.pod-detail h4{font-size:1.05rem;margin-bottom:10px}
++.pod-eps{display:flex;flex-direction:column;gap:10px}
++.pod-ep{display:flex;gap:12px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--ink);transition:.2s;font-family:inherit;width:100%}
++.pod-ep:hover{border-color:rgba(236,72,153,.55);transform:translateX(3px)}
++.ep-play{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f472b6,#ec4899 55%,#E11D48);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-size:.9rem}
++.ep-info{min-width:0}
++.ep-info b{display:block;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
++.ep-info small{color:var(--muted);font-size:.78rem}
++#podDetailClose{position:absolute;top:12px;right:12px}
++/* textarea del formulario de podcasts (reutiliza ae-form) */
++.ae-form textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;font-family:inherit;resize:vertical}
++.ae-form textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(225,29,72,.25)}
++.ae-form #ap-titulo,.ae-form #ap-rss,.ae-form #ap-portada-url,.ae-form #ap-categoria,.ae-form #ap-descripcion,.ae-form button[type=submit],.ae-form #ap-msg{grid-column:1/-1}
+
+
+########################################################################
+PARTE 4 - PORTAL: assets/logos/podcast-d2-rosa-fuego.svg (ARCHIVO NUEVO)
+########################################################################
+Logo D2 'Onda Humana - Rosa Fuego' aprobado por Jeremy el 2026-09-27 ~02:19 EDT.
+841 bytes, SVG valido, HTTP 200 verificado en vivo. Contenido completo:
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 96 96"><defs><linearGradient id="gD2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset=".55" stop-color="#ec4899"/><stop offset="1" stop-color="#E11D48"/></linearGradient></defs><rect x="4" y="4" width="88" height="88" rx="26" fill="url(#gD2)"/><rect x="12" y="10" width="72" height="30" rx="15" fill="#fff" opacity=".2"/><g fill="#fff"><circle cx="48" cy="36" r="11"/><path d="M28 68c0-10 9-16 20-16s20 6 20 16z"/></g><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M63.6 20.4A22 22 0 0 1 63.6 51.6" opacity=".95"/><path d="M69.2 14.8A30 30 0 0 1 69.2 57.2" opacity=".7"/><path d="M32.4 20.4A22 22 0 0 0 32.4 51.6" opacity=".95"/><path d="M26.8 14.8A30 30 0 0 0 26.8 57.2" opacity=".7"/></g></svg>
+---
+
+
+########################################################################
+PARTE 5 - APP WEB: android/app/src/main/assets/public/index.html
+########################################################################
+base = index.html.bak-1.9.27 (fuente exacta del build 1.9.27, 2026-09-26 18:49)
+head = index.html (fuente del build 1.9.28, 2026-09-26 20:59)
+Resultado: diff 100% ADITIVO (145 lineas agregadas, 0 eliminadas, 1 hunk).
+Contenido: BLOQUE 3B (cargarEmisorasComunitarias) + BLOQUE 3C v2 (Espacio Podcasts).
+Diff completo:
+
++        };
++      }
++    
++      window.cargarEmisorasComunitarias=async function(){
++        try{
++          var DB=(typeof db!=='undefined')?db:(typeof firebase!=='undefined'?firebase.firestore():null);
++          if(!DB||!window.stations) return;
++          var ahora=Date.now(), lista=null;
++          var ts=parseInt(localStorage.getItem('rl_comunitarias_ts')||'0',10);
++          if(ahora-ts<24*3600*1000){
++            try{ lista=JSON.parse(localStorage.getItem('rl_comunitarias')||'null'); }catch(e){ lista=null; }
++          }
++          if(!lista){
++            var snap=await DB.collection('emisoras_comunitarias').where('estado','==','activa').get();
++            lista=[];
++            snap.forEach(function(doc){
++              var e=doc.data();
++              if(!e.stream_url) return;
++              lista.push({id:'com_'+doc.id, name:e.nombre||'Sin nombre',
++                country:e.pais||'', code:'', city:e.ciudad||'', genre:e.genero||'',
++                logo:e.logo_url||'', stream:e.stream_url, comunitaria:true});
++            });
++            try{
++              localStorage.setItem('rl_comunitarias', JSON.stringify(lista));
++              localStorage.setItem('rl_comunitarias_ts', String(ahora));
++            }catch(e){}
++          }
++          if(!lista.length) return;
++          var vistos={};
++          window.stations.forEach(function(s){ if(s.stream) vistos[s.stream]=1; });
++          var nuevas=lista.filter(function(s){ return s.stream && !vistos[s.stream]; });
++          if(nuevas.length){
++            Array.prototype.push.apply(window.stations, nuevas);
++            if(typeof renderStations==='function') renderStations();
++          }
++        }catch(err){ /* offline o error: la app sigue con las 2123 */ }
++      };
++    })();
++    
++
++    /* ===== BLOQUE 3C v2 ƒ?" podcasts (1.9.28) ===== */
++    /* BLOQUE 3C v2 ƒ?" Espacio Podcasts (app 1.9.28). REEMPLAZA al 3C anterior.
++       Cambios v2:
++       - Oculta "Mostrar mA­s" (#loadMoreBtn) en modo Podcasts y en episodios; lo restaura en radio.
++       - Expone window.rlModoActual() para que el buscador se pause en modo Podcasts
++         (agregar la lA-nea guard al inicio del handler de bA§squeda, ver PARCHE-BUSCADOR.txt).
++       Pegar AL FINAL del script principal. NO modifica funciones existentes. */
++    (function(){
++      function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
++      var modo='radio', podcasts=[], cargados=false;
++      window.rlModoActual=function(){ return modo; };
++    
++      window.cargarPodcasts=async function(){
++        try{
++          var DB=(typeof db!=='undefined')?db:(typeof firebase!=='undefined'?firebase.firestore():null);
++          if(!DB) return;
++          var snap=await DB.collection('podcasts').where('estado','==','activa').get();
++          podcasts=[];
++          snap.forEach(function(doc){ var p=doc.data();
++            podcasts.push({id:doc.id, nombre:p.nombre||'Sin nombre', logo:p.logo_url||'',
++              categoria:p.categoria||'', descripcion:p.descripcion||'', episodios:p.episodios||[]});
++          });
++        }catch(e){ podcasts=[]; }
++        cargados=true;
++      };
++    
++      async function mostrarPodcasts(){
++        var grid=document.getElementById('stationGrid'); if(!grid) return;
++        var _lm=document.getElementById('loadMoreBtn'); if(_lm) _lm.style.display='none';
++        if(!cargados){ grid.innerHTML='<p class="rl-empty">Cargando podcastsƒ?Ý</p>'; await window.cargarPodcasts(); }
++        if(!podcasts.length){ grid.innerHTML='<p class="rl-empty">AA§n no hay podcasts publicados.</p>'; return; }
++        grid.innerHTML=podcasts.map(function(p){
++          var img=p.logo
++            ? '<img src="'+esc(p.logo)+'" style="width:56px;height:56px;border-radius:12px;object-fit:cover" onerror="this.style.display=\'none\'">'
++            : '<div style="width:56px;height:56px;border-radius:12px;background:#E11D48;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px">'+esc(p.nombre.charAt(0).toUpperCase())+'</div>';
++          return '<article class="station rl-podcast" data-id="'+esc(p.id)+'" style="cursor:pointer">'+img+
++            '<h3 class="station-name">'+esc(p.nombre)+'</h3>'+
++            (p.categoria?'<p class="rl-podcat">'+esc(p.categoria)+'</p>':'')+'</article>';
++        }).join('');
++        grid.querySelectorAll('.rl-podcast').forEach(function(el){
++          el.onclick=function(){ mostrarEpisodios(el.getAttribute('data-id')); };
++        });
++      }
++    
++      function mostrarEpisodios(podId){
++        var p=null;
++        podcasts.forEach(function(x){ if(x.id===podId) p=x; });
++        var grid=document.getElementById('stationGrid'); if(!grid||!p) return;
++        var _lm=document.getElementById('loadMoreBtn'); if(_lm) _lm.style.display='none';
++        var html='<button class="rl-back" id="rlVolver">ƒ+? Podcasts</button>'+
++                 '<h2 class="rl-podtitle">'+esc(p.nombre)+'</h2>';
++        if(p.descripcion) html+='<p class="rl-poddesc">'+esc(p.descripcion)+'</p>';
++        if(!p.episodios.length) html+='<p class="rl-empty">Sin episodios todavA-a.</p>';
++        html+=p.episodios.map(function(ep,i){
++          return '<article class="rl-ep" data-i="'+i+'"><b>'+esc(ep.titulo||('Episodio '+(i+1)))+'</b><br>'+
++            '<small>'+esc(ep.fecha||'')+(ep.duracion?' Aú '+esc(ep.duracion):'')+'</small></article>';
++        }).join('');
++        grid.innerHTML=html;
++        document.getElementById('rlVolver').onclick=function(){ mostrarPodcasts(); };
++        grid.querySelectorAll('.rl-ep').forEach(function(el){
++          el.onclick=function(){
++            var ep=p.episodios[+el.getAttribute('data-i')];
++            if(ep&&ep.audio_url&&typeof playStation==='function'){
++              playStation({id:'pod_'+p.id+'_'+el.getAttribute('data-i'),
++                name:ep.titulo||p.nombre, country:'', code:'', city:'', genre:'Podcast',
++                logo:p.logo||'', stream:ep.audio_url});
++            }
++          };
++        });
++      }
++    
++      var seg=document.getElementById('rlSegment');
++      if(seg){
++        seg.addEventListener('click',function(e){
++          var b=e.target.closest?e.target.closest('button'):null; if(!b) return;
++          modo=b.getAttribute('data-modo');
++          seg.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on',x===b); });
++          if(modo==='podcasts'){ mostrarPodcasts(); }
++          else if(typeof renderStations==='function'){
++            var _lm2=document.getElementById('loadMoreBtn'); if(_lm2) _lm2.style.display='';
++            renderStations();
++          }
++        });
++      }
++    })();
++    
++
+   </script>
+   <script src="js/now-playing.js"></script>
+   <script src="js/history.js"></script>
+@@ -2807,6 +2972,24 @@
+
+   <script src="vendor/firebase-app-compat.js"></script>
+   <script src="vendor/firebase-auth-compat.js"></script>
+   <script src="vendor/firebase-firestore-compat.js"></script>
++  <script>
++  /* Glue 1.9.28: Firebase (compat) ya cargo; inicializar y traer comunitarias + podcasts. */
++  (function(){
++    function boot(){
++      try{
++        var ready = (firebase.apps && firebase.apps.length)
++          ? Promise.resolve()
++          : fetch('firebase-config.json').then(function(r){ return r.json(); }).then(function(c){ firebase.initializeApp(c); });
++        ready.then(function(){
++          if (typeof window.cargarEmisorasComunitarias === 'function') window.cargarEmisorasComunitarias();
++          if (typeof window.cargarPodcasts === 'function') window.cargarPodcasts();
++        }).catch(function(){});
++      }catch(e){}
++    }
++    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
++    else boot();
++  })();
++  </script>
+   <script src="native-bridges.js"></script>
+   <script src="chat.js">
+ <script src="js/multicapa.js"></script>
+
+... total chars: 8000
+
+
+
+########################################################################
+PARTE 6 - APP WEB: chat.js - ESTADO (sin cambios en el ciclo)
+########################################################################
+chat.js (64,031 bytes, 2026-09-26 03:27) NO cambio entre 1.9.27 y 1.9.28.
+Verificacion de contenido (grep, 2026-09-27):
+  - 'susurro': 0 ocurrencias  -> el port de Susurro a chat.js esta PENDIENTE
+  - 'podcast': 0 ocurrencias  -> el port de Podcasts a chat.js esta PENDIENTE
+  - 'ep.audio': 0 ocurrencias -> chat.js aun NO lee ep.audio (pendiente al portar)
+  - 'cargarEmisorasComunitarias': 0 (vive en index.html, Bloque 3B)
+Conclusion Tiger: al portar Podcasts a la app, chat.js debe leer ep.audio;
+el port de Susurro+Podcasts a chat.js queda como trabajo pendiente, no es
+parte del diff 1.9.27->1.9.28 porque aun no se implemento.
+
+Badge Comunidad: SI implementado en la app web (index.html, Bloque 3B):
+  '<span class="badge-com">Comunidad</span>' envuelve stationCardHTML para las
+  emisoras comunitarias (s.comunitaria). Incluido en el diff de la Parte 5.
+
+
+########################################################################
+PARTE 7 - ANDROID/NATIVO: sin cambios en el ciclo
+########################################################################
+Barrido de android/app/src/main/java y res: ningun archivo modificado desde
+el build 1.9.27 (2026-09-26 19:08). versionCode 44 / versionName 1.9.28 sin
+cambios nativos en el ciclo.
+
+========================================================================
+FIN DEL DIFF 1.9.27 -> 1.9.28
+========================================================================
