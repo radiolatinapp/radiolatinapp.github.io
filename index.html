@@ -247,7 +247,8 @@
     <form id="ae-form" class="ae-form glass">
       <input id="ae-nombre" type="text" required maxlength="60" placeholder="Nombre de la emisora *">
       <input id="ae-url" type="url" required placeholder="Link de transmisión (audio) *">
-      <label class="ae-file">Logo de la emisora *<input id="ae-logo" type="file" accept="image/*" required></label>
+      <label class="ae-file">Logo (opcional)<input id="ae-logo" type="file" accept="image/*"></label>
+      <input id="ae-logo-url" type="url" placeholder="…o pega la URL de tu logo si ya está en internet (opcional)">
       <select id="ae-pais" required>
         <option value="">País *</option>
       <option value="Afganistán">Afganistán</option>
@@ -489,7 +490,7 @@
       <option value="Yibuti">Yibuti</option>
       <option value="Zambia">Zambia</option>
       <option value="Zimbabue">Zimbabue</option>
-      </select>
+            </select>
       <input id="ae-ciudad" type="text" required maxlength="60" placeholder="Ciudad / localidad *">
       <select id="ae-genero" required>
         <option value="">Género *</option>
@@ -515,8 +516,8 @@
       <option value="Oldies">Oldies</option>
       <option value="Variada">Variada</option>
       <option value="Otra">Otra</option>
-      </select>
-      <button type="submit" class="btn btn-primary">Enviar para revisión</button>
+            </select>
+      <button type="submit">Enviar para revisión</button>
       <p id="ae-msg" role="status"></p>
     </form>
   </section>
