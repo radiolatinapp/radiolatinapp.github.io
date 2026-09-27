@@ -27,7 +27,7 @@ var GENRE_GRADS=[
   [/urbana|reggaet/, 'linear-gradient(135deg,#f43f5e,#7c2d12)']
 ];
 function genreGrad(g){ g=String(g||'').toLowerCase(); for(var i=0;i<GENRE_GRADS.length;i++){ if(GENRE_GRADS[i][0].test(g)) return GENRE_GRADS[i][1]; } return 'linear-gradient(135deg,#E11D48,#7c2d12)'; }
-function initials(name){ var w=String(name||'?').trim().split(/\s+/); return (w[0].charAt(0)+(w[1]?w[1].charAt(0):'')).toUpperCase(); }
+function initials(n){ var stop=new Set(['radio','fm','am','stereo','estereo','la','el','de','del','los','las','y','en']); var w=String(n||'?').trim().split(/\s+/).filter(function(p){ return p&&!stop.has(p.toLowerCase()); }); var b=w.length?w:String(n||'?').trim().split(/\s+/).filter(Boolean); return (b.length>=2?(b[0][0]+b[1][0]):b[0].slice(0,2)).toUpperCase(); }
 
 /* ---------- estado ---------- */
 var STATIONS=[], FAVS={};
