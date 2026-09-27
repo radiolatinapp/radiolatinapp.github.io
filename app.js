@@ -833,19 +833,39 @@ renderHistoryRow();
     }).catch(function(){});
   }catch(e){}
 })();
-/* BLOQUE 1B v2 — Envío del formulario "Agrega tu emisora" (portal).
-   v2: funciona en plan Spark (sin bucket). El logo es best-effort:
-   - Si hay archivo: intenta subirlo; si la subida falla, continúa sin logo.
-   - Si el dueño pegó URL de logo: se usa tal cual (validada).
-   - logo_url puede quedar '' → la app/portal muestran un placeholder.
-   Requiere: db=firebase.firestore() inicializado. */
+/* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
+(function(){
+  var a=document.getElementById('navAgrega');
+  if(!a) return;
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var sec=document.getElementById('agrega-emisora');
+    if(sec) sec.classList.add('active');
+    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+    a.classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.fbInit) fbInit();
+  });
+})();
+
+
+/* BLOQUE 1B v3 — Envío del formulario "Agrega tu emisora" (portal).
+   Pegar AL FINAL de app.js (una sola vez).
+   v3: ya NO asume que db esté inicializado; llama a fbInit() (global en app.js)
+   dentro del submit, así el botón funciona aunque el usuario nunca haya abierto el chat.
+   Plan Spark (sin bucket): el logo por archivo no se sube; se guarda logo_url
+   (la URL que pegó el dueño) o '' y el portal/app muestran un placeholder.
+   Si en el futuro hay bucket Blaze: inicializar storage y subir a logos_pendientes/<id>.png */
 (function(){
   var form=document.getElementById('ae-form');
   if(!form) return;
+  if(form.dataset.aeWired) return;
+  form.dataset.aeWired='1';
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var msg=document.getElementById('ae-msg');
-    function v(id){ return document.getElementById(id).value.trim(); }
+    function v(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
     var url=v('ae-url');
     if(/youtube\.com|youtu\.be|twitch\.tv|tiktok\.com/i.test(url)){
       msg.textContent='Necesitamos el link de audio directo, no el del video.';
@@ -858,17 +878,12 @@ renderHistoryRow();
     }
     msg.textContent='Enviando...';
     try{
+      if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
       var id='p'+Date.now().toString(36);
-      var file=document.getElementById('ae-logo').files[0];
-      if(file && typeof storage!=='undefined'){
-        if(file.type.indexOf('image/')!==0||file.size>2*1024*1024){
-          throw new Error('Logo inválido (imagen, máx 2MB).');
-        }
-        try{
-          var ref=storage.ref('logos_pendientes/'+id+'.png');
-          await ref.put(file);
-          logoUrl=await ref.getDownloadURL();
-        }catch(upErr){ /* Sin bucket (Spark): se continúa sin logo subido */ }
+      var fileEl=document.getElementById('ae-logo');
+      var file=fileEl&&fileEl.files?fileEl.files[0]:null;
+      if(file && (file.type.indexOf('image/')!==0||file.size>2*1024*1024)){
+        throw new Error('Logo inválido (imagen, máx 2MB).');
       }
       await db.collection('emisoras_pendientes').doc(id).set({
         nombre:v('ae-nombre'),
@@ -885,22 +900,5 @@ renderHistoryRow();
     }catch(err){
       msg.textContent='Error: '+(err&&err.message?err.message:'desconocido');
     }
-  });
-})();
-
-
-/* Nav "Agrega tu emisora": el enlace del header abre la sección como página del SPA. */
-(function(){
-  var a=document.getElementById('navAgrega');
-  if(!a) return;
-  a.addEventListener('click',function(e){
-    e.preventDefault();
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    var sec=document.getElementById('agrega-emisora');
-    if(sec) sec.classList.add('active');
-    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
-    a.classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-    if(window.fbInit) fbInit();
   });
 })();
