@@ -147,7 +147,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .station-art{position:relative;aspect-ratio:1/.92;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .station-art img{width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));transition:transform .25s}
 .station-card:hover .station-art img{transform:scale(1.07)}
-.station-art .art-fallback{font-family:var(--font-t);font-weight:800;font-size:3rem;color:rgba(255,255,255,.92);text-shadow:0 4px 18px rgba(0,0,0,.5)}
+.station-art .art-fallback{font-family:var(--font-t);font-weight:800;font-size:3rem;color:#E11D48;text-shadow:0 2px 12px rgba(225,29,72,.25)}
 .station-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,5,10,.45);opacity:0;transition:.22s;backdrop-filter:blur(2px)}
 .station-card:hover .station-play{opacity:1}
 .station-play .pp{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f43f5e,#be123c);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 8px 26px rgba(225,29,72,.6);transform:scale(.85);transition:.22s}
