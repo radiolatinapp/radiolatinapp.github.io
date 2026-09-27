@@ -3510,7 +3510,7 @@
   "stream": "https://usa18.fastcast4u.com/proxy/rmoohhrw?mp=/1"
  },
  {
-  "name": "IQ Radio",
+  "name": "IQ Radio 105.5 FM",
   "country": "Costa Rica",
   "code": "CR",
   "city": "Nacional",
@@ -10197,15 +10197,6 @@
   "stream": "https://live.turadio.stream:7004/stream?type=http&nocache=596"
  },
  {
-  "name": "IQ Radio 105.5 FM",
-  "country": "Costa Rica",
-  "code": "CR",
-  "city": "",
-  "genre": "general",
-  "logo": "",
-  "stream": "http://rtvhd.net:9942/;"
- },
- {
   "name": "Colosal FM 88.3",
   "country": "Costa Rica",
   "code": "CR",
@@ -12807,7 +12798,7 @@
   "stream": "https://radio015.gt.gt/radio/8000/live.mp3"
  },
  {
-  "name": "Radio Romance",
+  "name": "Radio Romance 104.9 FM",
   "country": "Guatemala",
   "code": "GT",
   "city": "huehuetenango",
@@ -13104,10 +13095,10 @@
   "stream": "http://listen.usuarios.space:8036/live"
  },
  {
-  "name": "LHT FM 104.1",
+  "name": "Ultra FM 104.1",
   "country": "Honduras",
   "code": "HN",
-  "city": "",
+  "city": "Tegucigalpa",
   "genre": "general",
   "logo": "",
   "stream": "https://ice26.securenetsystems.net/LHTFM"
