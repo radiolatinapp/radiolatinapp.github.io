@@ -50,6 +50,10 @@ NOTA: los commits ecc65ed/00859b3 fueron un cambio sin autorizacion ya REVERTIDO
 
 
 ########################################################################
+========================================================================
+BLOQUE 1 DE 3: PORTAL (radiolatinapp.github.io)
+========================================================================
+
 PARTE 1 - PORTAL: index.html
 ########################################################################
 diff --git a/index.html b/index.html   (base -> head)
@@ -1155,6 +1159,10 @@ Logo D2 'Onda Humana - Rosa Fuego' aprobado por Jeremy el 2026-09-27 ~02:19 EDT.
 
 
 ########################################################################
+========================================================================
+BLOQUE 2 DE 3: APP WEB (www dentro de la app Android)
+========================================================================
+
 PARTE 5 - APP WEB: android/app/src/main/assets/public/index.html
 ########################################################################
 base = index.html.bak-1.9.27 (fuente exacta del build 1.9.27, 2026-09-26 18:49)
@@ -1343,6 +1351,10 @@ Badge Comunidad: SI implementado en la app web (index.html, Bloque 3B):
 
 
 ########################################################################
+========================================================================
+BLOQUE 3 DE 3: ANDROID/NATIVO
+========================================================================
+
 PARTE 7 - ANDROID/NATIVO: sin cambios en el ciclo
 ########################################################################
 Barrido de android/app/src/main/java y res: ningun archivo modificado desde
