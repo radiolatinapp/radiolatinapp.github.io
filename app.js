@@ -1052,7 +1052,7 @@ renderHistoryRow();
    La reproducción reutiliza el reproductor actual (fase 1). */
 (function(){
   var PODCASTS=[], podQ='', podCat='';
-  var POD_CATS=['Todos','Noticias','Deportes','Historia','Humor','Música','Misterio','Religiosos','Otra'];
+  var POD_CATS=['Todos','Noticias','Deportes','Historia','Humor','Música','Misterio','Religiosos','Motivación','Otra'];
   var D2='assets/logos/podcast-d2-rosa-fuego.svg';
   var podLoaded=false;
 
