@@ -66,8 +66,7 @@ function cardHTML(s){
     playing+logoHTML(s)+
     '<span class="station-play"><span class="pp">▶</span></span>'+
     '<span class="genre-tag">'+esc(s.genre||'Radio')+'</span>'+
-    '<span class="station-info"><b>'+esc(s.name)+'</b><span>'+esc(s.city||s.country||'')+'</span></span>'+
-    '<span class="live-pill">📡</span>'+
+    '<span class="station-info"><span>'+esc(s.city||s.country||'')+'</span><span class="live-pill" title="Emisora activa al aire">📡</span></span>'+
   '</button>';
 }
 function findStation(name){ for(var i=0;i<STATIONS.length;i++) if(STATIONS[i].name===name) return STATIONS[i]; return null; }
