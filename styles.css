@@ -317,3 +317,23 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .tiny{font-size:12px}
 .rl-footer{display:flex;gap:8px;justify-content:center;align-items:center;padding:20px 12px 28px;color:var(--muted,#9aa);font-size:.85rem;text-align:center}
 #visitCount{font-weight:700;color:var(--ink,#fff)}
+
+/* AE-STYLE v1 — Rediseño "Agrega tu emisora". Pegar al FINAL de styles.css. */
+.ae-wrap{max-width:640px;margin:0 auto}
+.ae-sub{color:var(--muted);margin:2px 0 18px;font-size:14px}
+.ae-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:22px;border-radius:var(--radius);box-shadow:var(--shadow)}
+.ae-form input[type=text],.ae-form input[type=url],.ae-form select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box}
+.ae-form input::placeholder{color:var(--muted)}
+.ae-form input:focus,.ae-form select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(225,29,72,.25)}
+.ae-form #ae-nombre,.ae-form #ae-url,.ae-form #ae-logo-url,.ae-form #ae-genero,.ae-form button[type=submit],.ae-form #ae-msg{grid-column:1/-1}
+.ae-file{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border:1.5px dashed var(--line);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .2s,color .2s}
+.ae-file:hover{border-color:var(--brand);color:var(--ink)}
+.ae-file input{max-width:210px;color:var(--muted)}
+.ae-form button[type=submit]{padding:13px;border:none;border-radius:12px;font-weight:700;font-size:15px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#f43f5e,#E11D48 60%,#be123c);box-shadow:0 8px 24px rgba(225,29,72,.4);transition:transform .15s,box-shadow .2s}
+.ae-form button[type=submit]:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(225,29,72,.5)}
+.ae-form #ae-msg{min-height:20px;font-size:13px;color:var(--muted);text-align:center;margin:0}
+.ae-form select option{background:#17171f;color:#fff}
+[data-theme="light"] .ae-form input[type=text],[data-theme="light"] .ae-form input[type=url],[data-theme="light"] .ae-form select{background:#f6f4f1}
+[data-theme="light"] .ae-form select option{background:#ffffff;color:#16161d}
+@media(max-width:560px){.ae-form{grid-template-columns:1fr;padding:16px}}
+
