@@ -1364,3 +1364,76 @@ cambios nativos en el ciclo.
 ========================================================================
 FIN DEL DIFF 1.9.27 -> 1.9.28
 ========================================================================
+
+========================================================================
+ACTUALIZACIÓN POST-AUDITORÍA — veredicto de Tiger 2026-09-27
+========================================================================
+Fecha de aplicación: 2026-09-27 (después de las 12:00 p.m. EDT).
+Alcance: correcciones y ports ordenados por Tiger sobre el diff 1.9.27→1.9.28.
+NO SE COMPILÓ. No se generó APK/AAB. No se tocó Firestore, Play Console,
+GitHub ni el portal.
+
+------------------------------------------------------------------------
+1) index.html — corrección de Podcasts 3C v2 al esquema real
+------------------------------------------------------------------------
+Archivo: C:\Users\ricoj\PC-ControlRemoto\radio-latina-build\android\app\src\main\assets\public\index.html
+
+ANTES → DESPUÉS:
+- Query:            where('estado','==','activa')  →  where('aprobado','==',true)
+- Nombre podcast:   p.nombre                       →  p.titulo
+- Logo podcast:     p.logo_url                     →  p.portada_url
+- Audio episodio:   ep.audio_url                   →  ep.audio
+- Reproducción:     stream: ep.audio_url           →  stream: ep.audio
+- Logo en player:   logo: p.logo_url               →  logo: p.portada
+- Título:           solo episodio                  →  podcast + ' · ' + episodio
+
+Además:
+- <script src="chat.js"> sin cerrar → <script src="chat.js"></script>
+- Glue idempotente: bandera `booted`; boot() retorna si ya corrió;
+  firebase.initializeApp(c) solo ignora error 'duplicate-app'.
+- Buscador: guard intacto (submit e input):
+  if(window.rlModoActual&&window.rlModoActual()==='podcasts')return;
+
+------------------------------------------------------------------------
+2) chat.js — Susurro portado del portal (quirúrgico, sala general)
+------------------------------------------------------------------------
+Archivo: C:\Users\ricoj\PC-ControlRemoto\radio-latina-build\android\app\src\main\assets\public\chat.js
+
+Se añadió SIN tocar el DM/hilos privados existentes (dm_*):
+- CSS: .chat-susurro-tag (etiqueta limpia 🔒 Susurro · nick).
+- render: esSusurro/susurroPara; solo autor y destinatario ven el texto;
+  los demás ven '🔒 Mensaje privado'.
+- Botón: data-action="whisper" junto a DM/Reportar/Bloquear en cada mensaje.
+- Handler: solo Premium puede iniciar (verificación por rol).
+- Funciones: sendWhisper(destNick), noteWhisper(payload) con uid del autor.
+- Hook: se notifica al destinatario al recibir susurro.
+
+Verificado: node --check SYNTAX_OK; Unicode correcto (🔒 U+1F512, · U+00B7);
+sin secuencias literales "`n".
+
+------------------------------------------------------------------------
+3) chat.js — Espacio Podcasts 3C v2 movido desde index.html
+------------------------------------------------------------------------
+- El IIFE completo del Bloque 3C v2 (corregido al esquema real) se movió
+  de index.html a chat.js como módulo independiente.
+- En chat.js quedó: cabecera 'ESPACIO PODCASTS (veredicto Tiger 2026-09-27)',
+  window.rlModoActual y window.cargarPodcasts expuestos; si `db` no es
+  visible en el alcance, cae a firebase.firestore().
+- En index.html quedó solo un comentario puntero NO ejecutable:
+  /* Movido a chat.js el 2026-09-27 (veredicto de Tiger). ... */
+- Una sola copia activa de Podcasts (sin listeners ni estado duplicados).
+
+------------------------------------------------------------------------
+4) Verificaciones finales
+------------------------------------------------------------------------
+- chat.js: 72.723 bytes, UTF-8 sin BOM, LF; node --check OK.
+- index.html: 603.922 bytes; sin bloque 3C inline; puntero presente.
+- Esquema: 'aprobado' SÍ; 'estado'/'activa'/'nombre'/'logo_url'/'ep.audio_url' NO.
+- Respaldos: index.html.bak-20260927-veredicto y
+  chat.js.bak-20260927-veredicto en el mismo directorio.
+- Susurro: una sola acción/listener por mensaje; DM existente intacto.
+- Podcasts: render, episodios, player y buscador conformes al esquema real.
+
+========================================================================
+FIN DE LA ACTUALIZACIÓN POST-AUDITORÍA
+========================================================================
