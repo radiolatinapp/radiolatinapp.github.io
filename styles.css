@@ -313,3 +313,13 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .link-row{display:flex;gap:8px;margin:8px 0}
 .link-row input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:inherit;font-size:16px;letter-spacing:2px;text-transform:uppercase}
 .tiny{font-size:12px}
+
+/* ---- Agrega tu emisora (1.9.28) ---- */
+.ae-wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px}
+.ae-sub{color:var(--muted,#9aa);margin:0 0 14px}
+.ae-form{display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px}
+.ae-form input[type=text],.ae-form input[type=url],.ae-form select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(128,128,128,.35);background:rgba(128,128,128,.08);color:inherit;font-size:16px;box-sizing:border-box}
+.ae-file{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:600}
+.ae-file input[type=file]{font-size:14px}
+.ae-form .btn{align-self:flex-start}
+#ae-msg{min-height:1.2em;font-size:14px;margin:4px 0 0}
