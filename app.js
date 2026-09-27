@@ -1072,7 +1072,7 @@ renderHistoryRow();
   function playPodcastEpisode(p,ep){
     playStation({
       name:(p.titulo||'Podcast')+' · '+(ep.titulo||'Episodio'),
-      stream:ep.url,
+      stream:ep.audio,
       logo:p.portada_url||'',
       genre:'Podcast',
       city:'',
