@@ -1,0 +1,345 @@
+DIFF SALAS DE ESCUCHA EN VIVO v1 - Radio Latina 1.9.28 - rev b (2026-09-27)
+Correcciones del veredicto de Tiger:
+C1: stableId = SHA-256("nombre|ciudad|codigo") via window.rlAutoBridge.stableIdFor (native-bridges.js).
+    Eliminado el hash djb2 propio (rlHashStr) y window.rlStableId; nuevo nombre window.rlSalaStableId (async).
+C2: tope de creacion de salas privadas: 3/dia (decision 4), contador diario como el de mensajes.
+Base: *.bak-1.9.28-salas (pre-Salas). NO COMPILAR sin visto bueno de Tiger.
+
+======================================================================
+ARCHIVO: chat.js
+======================================================================
+--- chat.js.bak-1.9.28-salas
++++ chat.js
+@@ -669,6 +669,10 @@
+   var roomUnsub = null;
+   var currentRoom = null;
+   var _lastRoomMsgAt = 0;
++  var salaUnsub = null; /* SALAS v1 */
++  var currentSala = null; /* SALAS v1 */
++  var _lastSalaMsgAt = 0; /* SALAS v1 */
++  var _salaVerdeCache = {}; /* SALAS v1: stableId -> {ts, n} */
+ 
+   /* Genera un cÃ³digo de 6 letras con el alfabeto permitido. */
+   function genCode(){
+@@ -707,11 +711,13 @@
+     var old = document.getElementById(id);
+     if(old) old.remove();
+     if(id === 'rlRoomOv') closeRoom();
++    if(id === 'rlSalaOv') closeSala(); /* SALAS v1 */
+     if(id === 'rlDmOv') closeDM(); /* 1.9.20 */
+   }
+   function closeAllRoomSheets(){
+     closeSheetById('rlSheetOv');
+     closeSheetById('rlRoomOv');
++    closeSheetById('rlSalaOv'); /* SALAS v1 */
+     closeSheetById('rlDmOv'); /* 1.9.20 */
+   }
+ 
+@@ -746,6 +752,13 @@
+         '<span class="room-item-code">'+esc(r.code)+'</span></button>';
+     }).join('');
+   }
++
++  /* Tope de creacion de salas privadas: 3/dia (decision 4 del spec, veredicto Tiger 2026-09-27).
++   * Contador diario en localStorage, mismo patron que el limite de mensajes. */
++  function rlRoomDayKey(){ var d=new Date();
++    return 'rl_salas_creadas_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
++  function rlRoomsToday(){ return parseInt(localStorage.getItem(rlRoomDayKey())||'0',10); }
++  function rlCountRoom(){ try{ localStorage.setItem(rlRoomDayKey(),String(rlRoomsToday()+1)); }catch(e){} }
+ 
+   /* ---------------- Crear sala (solo Premium) ---------------- */
+ 
+@@ -763,6 +776,7 @@
+   async function createRoom(name, ov){
+     var roomName = String(name == null ? '' : name).replace(/[<>&"']/g, '').trim().slice(0, 40);
+     if(roomName.length < 3){ notice('El nombre de la sala debe tener al menos 3 caracteres.'); return; }
++    if(rlRoomsToday()>=3){ notice('Ya creaste 3 salas hoy. PodrÃ¡s crear mÃ¡s maÃ±ana.'); return; }
+     if(!(await ensureSignedIn())) return;
+     var uid = auth.currentUser.uid;
+     var code = genCode();
+@@ -783,6 +797,7 @@
+       {nick: prof.nick || getNickname() || 'Oyente', role: 'owner', joinedAt: now});
+     try{ await batch.commit(); }
+     catch(e){ notice('No se pudo crear la sala. IntÃ©ntalo de nuevo.'); return; }
++    rlCountRoom();
+     saveMyRoom(code, roomName);
+     closeSheetById('rlSheetOv');
+     notice('Sala creada. Tu cÃ³digo de invitaciÃ³n es ' + code + '.');
+@@ -1413,6 +1428,208 @@
+     }
+   }
+ 
++  /* ================ SALAS DE EMISORA v1 (2026-09-27, rev b 2026-09-27) ================
++   * Sala en vivo por emisora: salas_emisora/{stableId}/messages.
++   * stableId = 'st_' + SHA-256("nombre|ciudad|codigo"), 12 hex, calculado por
++   *   window.rlAutoBridge.stableIdFor (native-bridges.js). Replica exacta del nativo.
++   * NUNCA un hash propio: web y nativo deben producir el mismo id (veredicto Tiger).
++   * Reutiliza: rlCanChat/rlCountMsg (limite global 10/dia), ensureSignedIn,
++   * hasBadWord, sheetShell, estilos y render del chat.
++   * "Activos en el chat" = uids distintos con mensaje de < 5 min (cliente).
++   * Etiqueta honesta: NO es conteo de oyentes (eso requiere Blaze, v2).
++   */
++
++  /* stableId via puente nativo (async). station = {name, city, code}.
++   * Retorna Promise<string|null>; null si el puente no esta listo. */
++  function rlSalaStableId(station){
++    try{
++      var b = window.rlAutoBridge;
++      if(b && typeof b.stableIdFor === 'function') return b.stableIdFor(station);
++    }catch(e){}
++    return Promise.resolve(null);
++  }
++  window.rlSalaStableId = rlSalaStableId;
++
++  function salaEmisoraRef(stableId){
++    return db.collection('salas_emisora').doc(stableId).collection('messages');
++  }
++
++  function injectSalaStyles(){
++    if(document.getElementById('salaStyles')) return;
++    var st = document.createElement('style');
++    st.id = 'salaStyles';
++    st.textContent = [
++      '.sala-dot{position:absolute;top:6px;right:6px;display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.68);border-radius:999px;padding:3px 8px 3px 6px;font-size:10px;font-weight:700;color:#fff;pointer-events:none;z-index:3;line-height:1}',
++      '.sala-dot i{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;flex:none}',
++      '.sala-activos{display:block;font-size:.72rem;color:var(--muted);font-weight:400;margin-top:2px}'
++    ].join('\n');
++    document.head.appendChild(st);
++  }
++
++  function renderSalaMessages(box, docs){
++    if(!box) return;
++    var mine = getNickname();
++    var nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
++    if(!docs.length){
++      box.innerHTML = '<div class="chat-empty">A\u00FAn no hay mensajes en esta sala. \u00A1Saluda primero! \uD83D\uDC4B</div>';
++      return;
++    }
++    box.innerHTML = docs.map(function(d){
++      var data = d.data() || {};
++      var nick = data.apodo || data.nickname || 'Oyente';
++      var isOwn = nick === mine;
++      if(data.uid && nick) rlCacheNickUid(nick, data.uid);
++      var time = formatTime(data.createdAt);
++      var flag = data.pais ? flagEmoji(String(data.pais)) + ' ' : '';
++      var sx = data.sexo ? ' ' + sexIcon(String(data.sexo)) : '';
++      var txt = data.texto || data.text || '';
++      return '<div class="chat-msg'+(isOwn?' own':'')+'">'+
++        '<div class="chat-msg-head"><b>'+flag+esc(nick)+sx+'</b>'+
++        (time?'<span>'+esc(time)+'</span>':'')+'</div>'+
++        '<p>'+esc(txt)+'</p></div>';
++    }).join('');
++    if(nearBottom) box.scrollTop = box.scrollHeight;
++  }
++
++  function pintarActivosSala(ov, n){
++    var lbl = ov ? ov.querySelector('#salaActivos') : null;
++    if(lbl) lbl.textContent = n+' '+(n===1?'activo en el chat':'activos en el chat');
++  }
++
++  function subscribeSala(stableId, box, ov){
++    if(salaUnsub){ try{ salaUnsub(); }catch(e){} salaUnsub = null; }
++    try{
++      salaUnsub = salaEmisoraRef(stableId)
++        .orderBy('createdAt','desc')
++        .limit(60)
++        .onSnapshot(function(snap){
++          var docs = [];
++          var uids = {};
++          var ahora = Date.now();
++          snap.forEach(function(d){
++            docs.push(d);
++            var data = d.data() || {};
++            var ms = 0;
++            try{ var ts = data.createdAt; ms = ts && ts.toMillis ? ts.toMillis() : 0; }catch(e){ ms = 0; }
++            if(!ms) ms = ahora;
++            if(ahora - ms < 5*60*1000 && data.uid) uids[data.uid] = 1;
++          });
++          var n = 0; for(var k in uids) n++;
++          pintarActivosSala(ov, n);
++          renderSalaMessages(box, docs.reverse());
++        }, function(){
++          notice('Esta sala ya no est\u00E1 disponible.');
++          closeSheetById('rlSalaOv');
++        });
++    }catch(e){ notice('No se pudieron cargar los mensajes de la sala.'); }
++  }
++
++  function closeSala(){
++    if(salaUnsub){ try{ salaUnsub(); }catch(e){} salaUnsub = null; }
++    currentSala = null;
++  }
++
++  function openSalaEmisora(stableId, nombreEmisora){
++    if(!stableId) return;
++    injectSalaStyles();
++    closeSheetById('rlSalaOv');
++    currentSala = {stableId: stableId, nombre: nombreEmisora || 'Sala en vivo'};
++    var titulo = esc(nombreEmisora || 'Sala en vivo') +
++      '<span class="sala-activos" id="salaActivos">0 activos en el chat</span>';
++    var ov = sheetShell(titulo,
++      '<div class="chat-messages room-msgs" id="salaMsgs" role="log" aria-live="polite" aria-label="Mensajes de la sala"></div>'+
++      '<form class="chat-form" id="salaForm" autocomplete="off">'+
++      '<input class="chat-input" id="salaInput" type="text" maxlength="200" placeholder="Escribe un mensaje\u2026" aria-label="Escribe un mensaje">'+
++      '<button class="chat-send" id="salaSend" type="submit">Enviar</button></form>',
++      'rlSalaOv');
++    var box = ov.querySelector('#salaMsgs');
++    ov.querySelector('#salaForm').addEventListener('submit', function(e){ e.preventDefault(); sendSalaMessage(stableId); });
++    subscribeSala(stableId, box, ov);
++  }
++  window.rlOpenSalaEmisora = openSalaEmisora;
++
++  async function sendSalaMessage(stableId){
++    var ov = document.getElementById('rlSalaOv');
++    var input = ov ? ov.querySelector('#salaInput') : null;
++    var text = input ? (input.value||'').trim().slice(0, MAX_TEXT) : '';
++    if(!text){ notice('Escribe un mensaje antes de enviarlo.'); return; }
++    if(!(await rlCanChat())){ rlShowChatLimit(); return; }
++    var now = Date.now();
++    if(now - _lastSalaMsgAt < 3000){ notice('Espera un momento antes de enviar otro mensaje.'); return; }
++    if(hasBadWord(text)){ notice('Tu mensaje contiene palabras no permitidas.'); return; }
++    if(!(await ensureSignedIn())) return;
++    var prof = rlChatProfile();
++    try{
++      await salaEmisoraRef(stableId).add({
++        texto: text,
++        apodo: prof.nick || getNickname() || 'Oyente',
++        sexo: prof.sexo || 'X',
++        pais: prof.pais || rlDetectCountry(),
++        uid: auth.currentUser.uid,
++        createdAt: firebase.firestore.FieldValue.serverTimestamp()
++      });
++      _lastSalaMsgAt = now;
++      rlCountMsg();
++      if(input) input.value = '';
++      rlPlaySentSound();
++    }catch(e){ notice('No se pudo enviar tu mensaje. Int\u00E9ntalo de nuevo.'); }
++  }
++
++  /* Puntito verde en tarjetas: activos en el chat por sala (cache 60 s).
++   * NOTA DEUDA (costo): 1 query ligera (limit 15) por tarjeta visible sin cache.
++   * A futuro: contador agregado en el doc de la sala para costo cero. */
++  function pintarSalaDot(btn, n){
++    if(!btn || btn.querySelector('.sala-dot')) return;
++    injectSalaStyles();
++    var dot = document.createElement('span');
++    dot.className = 'sala-dot';
++    dot.title = n+' '+(n===1?'activo en el chat':'activos en el chat');
++    var i = document.createElement('i');
++    var b = document.createElement('b');
++    b.textContent = String(n);
++    dot.appendChild(i); dot.appendChild(b);
++    btn.appendChild(dot);
++  }
++
++  function rlPintarSalasVerdes(scopeEl){
++    try{
++      var root = scopeEl || document;
++      var btns = root.querySelectorAll('.station-art[data-stream]');
++      if(!btns.length || !db) return;
++      var ahora = Date.now();
++      Array.prototype.forEach.call(btns, function(btn){
++        try{
++          if(btn.querySelector('.sala-dot')) return;
++          var stream = btn.getAttribute('data-stream') || '';
++          if(!stream) return;
++          /* C1 Tiger: nombre/ciudad/codigo desde data-attributes; stableId SHA-256 del puente. */
++          var st4 = {name: btn.getAttribute('data-name')||'',
++                     city: btn.getAttribute('data-city')||'',
++                     code: btn.getAttribute('data-code')||''};
++          rlSalaStableId(st4).then(function(sid){
++            if(!sid) return;
++            var c = _salaVerdeCache[sid];
++            if(c && ahora - c.ts < 60000){ if(c.n>0) pintarSalaDot(btn, c.n); return; }
++            salaEmisoraRef(sid).orderBy('createdAt','desc').limit(15).get().then(function(snap){
++              var uids = {};
++              var t2 = Date.now();
++              snap.forEach(function(d){
++                var data = d.data()||{};
++                var ms = 0;
++                try{ var ts=data.createdAt; ms = ts && ts.toMillis ? ts.toMillis() : 0; }catch(e){}
++                if(ms && t2 - ms < 5*60*1000 && data.uid) uids[data.uid] = 1;
++              });
++              var n = 0; for(var k in uids) n++;
++              _salaVerdeCache[sid] = {ts: t2, n: n};
++              if(n>0) pintarSalaDot(btn, n);
++            }).catch(function(){});
++          });
++        }catch(e){}
++      });
++    }catch(e){}
++  }
++  
++
+   /* ---------------- Init ---------------- */
+ 
+   function init() {
+@@ -1427,6 +1644,9 @@
+     } catch (error) { /* noop */ }
+     /* 1.9.13: exponer teardown para RLShowPage */
+     window.RLChatTeardown = teardownChat;
++    /* SALAS v1: estilos + primer pintado de puntitos verdes */
++    try{ injectSalaStyles(); }catch(e){}
++    try{ var _sg=document.getElementById('stationGrid'); if(_sg) rlPintarSalasVerdes(_sg); }catch(e){}
+   }
+ 
+   if (document.readyState === 'loading') {
+
+======================================================================
+ARCHIVO: index.html
+======================================================================
+--- index.html.bak-1.9.28-salas
++++ index.html
+@@ -1602,6 +1602,9 @@
+         <button class="pf-icon" id="pfShare" type="button" aria-label="Compartir emisora">
+           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0-12L8 7m4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+         </button>
++        <button class="pf-icon" id="pfSala" type="button" aria-label="Sala en vivo">
++          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="11.5" r="2.4" fill="#22c55e"/></svg>
++        </button>
+       </div>
+     </div>
+   </div>
+@@ -2527,7 +2530,7 @@
+       const nm = escapeHTML(s.name);
+       return `
+         <article class="station" data-genre="${escapeHTML(s.genre)}">
+-          <button class="station-art" type="button" data-id="${s.id}" data-name="${nm}" aria-label="Escuchar ${nm}">
++          <button class="station-art" type="button" data-id="${s.id}" data-name="${nm}" data-city="${escapeHTML(s.city||'')}" data-code="${escapeHTML(s.code||'')}" data-stream="${escapeHTML(s.stream||'')}" aria-label="Escuchar ${nm}">
+             ${s.logo
+               ? `<img src="${s.logo}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'" />`
+               : `<span class="station-monogram" aria-hidden="true">${escapeHTML(initials(s.name))}</span>`}
+@@ -2553,7 +2556,32 @@
+         if (state.favoritesOnly) renderStations();
+         else updatePlaybackUI();
+       }));
+-    }
++      /* SALAS v1: puntito verde de salas activas (tras cada bind de parrilla) */
++      try{ if(typeof window.rlPintarSalasVerdes==='function') window.rlPintarSalasVerdes(gridEl); }catch(e){}
++    }
++
++    /* SALAS v1: boton "Sala en vivo" del reproductor */
++    (function(){
++      var b = document.getElementById('pfSala');
++      if(!b) return;
++      b.addEventListener('click', function(){
++        try{
++          var st = (typeof window.RL_currentStation === 'function') ? window.RL_currentStation() : null;
++          if(!st || !st.stream){
++            if(typeof window.toast === 'function') window.toast('Elige una emisora primero');
++            return;
++          }
++          if(typeof window.rlSalaStableId !== 'function' || typeof window.rlOpenSalaEmisora !== 'function'){
++            if(typeof window.toast === 'function') window.toast('La sala estarÃ¡ disponible en un momento');
++            return;
++          }
++          window.rlSalaStableId(st).then(function(sid){
++            if(!sid){ if(typeof window.toast === 'function') window.toast('La sala estarÃ¡ disponible en un momento'); return; }
++            window.rlOpenSalaEmisora(sid, st.name || 'Sala en vivo');
++          });
++        }catch(e){}
++      });
++    })();
+     function findStation(predicate) {
+       return stations.find(predicate) || null;
+     }
