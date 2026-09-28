@@ -1229,3 +1229,101 @@ renderHistoryRow();
   else { watchLink(); restorePremium(); }
 
 })();
+
+/* ================= SALA DE EMISORA (portal) =================
+ * Misma sala que la app: stableId = SHA-256("nombre|ciudad|codigo"),
+ * 12 hex, prefijo st_. Ruta: salas_emisora/{stableId}/messages.
+ * En el portal se usa Web Crypto (async); la app usa el puente nativo.
+ * Ambos dan el mismo id para la misma emisora.
+ */
+function rlSalaStableId(station){
+  var txt = (station.name||'') + '|' + (station.city||'') + '|' + (station.code||'');
+  var data = new TextEncoder().encode(txt);
+  return crypto.subtle.digest('SHA-256', data).then(function(hash){
+    var hex = Array.prototype.map.call(new Uint8Array(hash), function(b){
+      return ('0'+b.toString(16)).slice(-2);
+    }).join('');
+    return 'st_' + hex.slice(0, 12);
+  }).catch(function(){ return null; });
+}
+
+var salaUnsub = null, currentSala = null;
+
+function openSalaEmisora(stableId, nombre){
+  closeSala();
+  currentSala = {stableId: stableId, nombre: nombre};
+  el('salaName').textContent = nombre;
+  el('salaView').hidden = false;
+  subscribeSala(stableId);
+  el('salaView').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function subscribeSala(stableId){
+  var box = el('salaMsgs');
+  try{
+    salaUnsub = db.collection('salas_emisora').doc(stableId).collection('messages')
+      .orderBy('createdAt','desc').limit(60).onSnapshot(function(snap){
+        var docs = [], mine = rlChatProfile().nick;
+        snap.forEach(function(d){ docs.push(d); });
+        var nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+        box.innerHTML = docs.length
+          ? docs.reverse().map(function(d){ return msgHTML(d, mine); }).join('')
+          : '<div class="chat-empty">Sé la primera persona en saludar en la sala. 👋</div>';
+        if(nearBottom) box.scrollTop = box.scrollHeight;
+      }, function(){ toast('No se pudo cargar la sala.'); closeSalaView(); });
+  }catch(e){ toast('No se pudo cargar la sala.'); }
+}
+function closeSala(){
+  if(salaUnsub){ try{ salaUnsub(); }catch(e){} salaUnsub = null; }
+  currentSala = null;
+}
+function closeSalaView(){ closeSala(); el('salaView').hidden = true; }
+el('salaClose').addEventListener('click', closeSalaView);
+el('salaForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  var text = el('salaInput').value.trim().slice(0, 500);
+  if(!text || !currentSala) return;
+  if(!(await ensureSignedIn())) return;
+  try{
+    var prof = rlChatProfile();
+    await db.collection('salas_emisora').doc(currentSala.stableId).collection('messages').add({
+      texto: text, apodo: prof.nick||'Oyente', sexo: prof.sexo||'X',
+      pais: prof.pais||rlDetectCountry(), uid: auth.currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    el('salaInput').value = '';
+  }catch(err){ toast('No se pudo enviar el mensaje.'); }
+});
+
+/* Botón "Sala en vivo" en el reproductor */
+el('pbSala').addEventListener('click', function(){
+  if(!current) return;
+  var st = current;
+  rlSalaStableId(st).then(function(sid){
+    if(!sid){ toast('La sala estará disponible en un momento.'); return; }
+    openSalaEmisora(sid, st.name || 'Sala en vivo');
+  });
+});
+
+/* Puntos verdes: emisoras con actividad reciente en su sala */
+var _salaVerdeCache = {};
+function rlPintarSalasVerdes(){
+  if(!db) return;
+  document.querySelectorAll('.station-card').forEach(function(card){
+    var name = card.getAttribute('data-st');
+    var st = findStation(name);
+    if(!st) return;
+    rlSalaStableId(st).then(function(sid){
+      if(!sid) return;
+      var c = _salaVerdeCache[sid];
+      var now = Date.now();
+      if(c && now - c.ts < 60000){ if(c.n > 0) card.classList.add('tiene-sala'); return; }
+      var hace = new Date(now - 10*60*1000);
+      db.collection('salas_emisora').doc(sid).collection('messages')
+        .where('createdAt','>',hace).limit(1).get().then(function(snap){
+          _salaVerdeCache[sid] = {ts: now, n: snap.size};
+          if(snap.size > 0) card.classList.add('tiene-sala');
+          else card.classList.remove('tiene-sala');
+        }).catch(function(){});
+    });
+  });
+}
