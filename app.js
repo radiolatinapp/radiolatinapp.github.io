@@ -1268,6 +1268,12 @@ function salaEnsureOverlay(){
   bd.hidden = true;
   bd.addEventListener('click', function(){ closeSalaView(); });
   document.body.appendChild(bd);
+  /* FIX-TIGER #pbSala 2026-09-27: #salaView vive anidado en #panePriv
+     (pestana oculta, display:none). Un position:fixed NO escapa de un
+     ancestro con display:none, asi que el modal nunca se veia en el
+     telefono. Se saca #salaView a nivel de body una sola vez. */
+  var sv = document.getElementById('salaView');
+  if(sv && sv.parentNode !== document.body) document.body.appendChild(sv);
 }
 function openSalaEmisora(stableId, nombre){
   closeSala();
