@@ -433,3 +433,11 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .ae-form textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--ink);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;font-family:inherit;resize:vertical}
 .ae-form textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(225,29,72,.25)}
 .ae-form #ap-titulo,.ae-form #ap-rss,.ae-form #ap-portada-url,.ae-form #ap-categoria,.ae-form #ap-descripcion,.ae-form button[type=submit],.ae-form #ap-msg{grid-column:1/-1}
+
+/* Punto verde: emisora con sala activa */
+.station-card.tiene-sala::after{
+  content:''; position:absolute; top:8px; right:8px; width:12px; height:12px;
+  border-radius:50%; background:#00E676; border:2px solid #fff;
+  box-shadow:0 0 6px rgba(0,230,118,.8); z-index:2;
+}
+#pbSala{ font-size:18px; }
