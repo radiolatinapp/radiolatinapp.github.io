@@ -1249,13 +1249,38 @@ function rlSalaStableId(station){
 
 var salaUnsub = null, currentSala = null;
 
+/* FIX-SALA-PORTAL-VISIBLE 2026-09-27: la sala se abre como overlay modal
+   VISIBLE sobre la vista actual, en el contexto de la emisora que suena.
+   Jeremy: "tiene que ser visible, la gente no se va a poner a buscarlo".
+   No se navega a otra sección: el usuario sigue donde estaba escuchando. */
+function salaEnsureOverlay(){
+  if(document.getElementById('salaOverlayCSS')) return;
+  var st = document.createElement('style');
+  st.id = 'salaOverlayCSS';
+  st.textContent =
+    '#salaBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);z-index:9998;}'
+    + '#salaView.sala-modal{position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);'
+    + 'width:min(520px,calc(100vw - 32px));max-height:min(86vh,720px);display:flex;flex-direction:column;margin:0;}'
+    + '#salaView.sala-modal #salaMsgs{flex:1;overflow-y:auto;min-height:220px;}';
+  document.head.appendChild(st);
+  var bd = document.createElement('div');
+  bd.id = 'salaBackdrop';
+  bd.hidden = true;
+  bd.addEventListener('click', function(){ closeSalaView(); });
+  document.body.appendChild(bd);
+}
 function openSalaEmisora(stableId, nombre){
   closeSala();
   currentSala = {stableId: stableId, nombre: nombre};
+  salaEnsureOverlay();
+  var sv = el('salaView'), bd = el('salaBackdrop');
+  sv.classList.add('sala-modal');
   el('salaName').textContent = nombre;
-  el('salaView').hidden = false;
+  if(bd) bd.hidden = false;
+  sv.hidden = false;
+  document.body.style.overflow = 'hidden';
   subscribeSala(stableId);
-  el('salaView').scrollIntoView({behavior:'smooth', block:'nearest'});
+  setTimeout(function(){ try{ el('salaInput').focus(); }catch(e){} }, 120);
 }
 function subscribeSala(stableId){
   var box = el('salaMsgs');
@@ -1276,7 +1301,14 @@ function closeSala(){
   if(salaUnsub){ try{ salaUnsub(); }catch(e){} salaUnsub = null; }
   currentSala = null;
 }
-function closeSalaView(){ closeSala(); el('salaView').hidden = true; }
+function closeSalaView(){
+  closeSala();
+  var sv = el('salaView'), bd = el('salaBackdrop');
+  sv.hidden = true;
+  sv.classList.remove('sala-modal');
+  if(bd) bd.hidden = true;
+  document.body.style.overflow = '';
+}
 el('salaClose').addEventListener('click', closeSalaView);
 el('salaForm').addEventListener('submit', async function(e){
   e.preventDefault();
