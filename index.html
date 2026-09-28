@@ -213,6 +213,17 @@
           <button id="roomDeleteBtn" class="linklike danger" hidden>🗑 Eliminar sala</button>
         </div>
       </div>
+<div id="salaView" class="room-view glass" hidden>
+  <div class="room-head">
+    <div><h3 id="salaName"></h3><span class="code-tag">Sala en vivo</span></div>
+    <button id="salaClose" class="icon-btn" title="Cerrar">✕</button>
+  </div>
+  <div id="salaMsgs" class="chat-messages" role="log" aria-live="polite"></div>
+  <form id="salaForm" class="chat-form" autocomplete="off">
+    <input id="salaInput" class="chat-input" type="text" maxlength="500" placeholder="Escribe un mensaje…" aria-label="Escribe un mensaje">
+    <button class="btn btn-primary" type="submit">Enviar</button>
+  </form>
+</div>
     </div>
   </section>
 
@@ -601,6 +612,7 @@
   <div class="eq" id="pbEq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
   <button id="pbTimer" class="pb-btn pb-tool" aria-label="Temporizador de apagado" title="Temporizador de apagado">⏱<span id="tmBadge" class="tm-badge" hidden></span></button>
   <button id="pbShare" class="pb-btn pb-tool" aria-label="Compartir emisora" title="Compartir emisora">↗</button>
+  <button id="pbSala" class="pb-btn pb-tool" aria-label="Sala en vivo" title="Sala en vivo">💬</button>
   <button id="pbToggle" class="pb-btn" aria-label="Pausar">⏸</button>
   <button id="pbClose" class="pb-btn pb-close" aria-label="Cerrar reproductor">✕</button>
 </div>
