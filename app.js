@@ -54,7 +54,7 @@ function fixedLogo(s){ var l=s.logo||''; return LOGO_FIX.hasOwnProperty(l)?LOGO_
 function logoHTML(s){
   var grad=genreGrad(s.genre);
   var logo=fixedLogo(s);
-  if(logo){ return '<div class="station-art" style="background:'+grad+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;art-fallback&quot;>'+esc(initials(s.name))+'</span>\'"></div>'; }
+  if(logo){ return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.remove()"></div>'; }
   return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span></div>';
 }
 function cardHTML(s){
@@ -985,7 +985,7 @@ renderHistoryRow();
   function podCardHTML(p){
     var port=p.portada_url||'';
     var cover=port
-      ? '<img src="'+pes(port)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;pod-fallback&quot;>'+pes(podInitials(p.titulo))+'</span>\'">'
+      ? '<span class="pod-fallback">'+pes(podInitials(p.titulo))+'</span><img src="'+pes(port)+'" alt="" loading="lazy" onerror="this.remove()">'
       : '<span class="pod-fallback">'+pes(podInitials(p.titulo))+'</span>';
     var eps=(p.episodios&&p.episodios.length)?p.episodios.length:0;
     var meta=eps?(eps+(eps===1?' episodio':' episodios')):'Próximamente';
