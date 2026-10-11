@@ -54,8 +54,8 @@ function fixedLogo(s){ var l=s.logo||''; return LOGO_FIX.hasOwnProperty(l)?LOGO_
 function logoHTML(s){
   var grad=genreGrad(s.genre);
   var logo=fixedLogo(s);
-  if(logo){ return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.remove()"></div>'; }
-  return '<div class="station-art" style="background:'+grad+'"><span class="art-fallback">'+esc(initials(s.name))+'</span></div>';
+  if(logo){ return '<div class="station-art" style="background:'+grad+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.remove()"></div>'; }
+  return '<div class="station-art" style="background:'+grad+'"></div>';
 }
 function cardHTML(s){
   var fav=FAVS[s.name]?' on':'';
