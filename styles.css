@@ -145,7 +145,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .station-card{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:transform .2s,box-shadow .25s;text-align:left;color:var(--ink);padding:0}
 .station-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(225,29,72,.35)}
 .station-art{position:relative;aspect-ratio:1/.92;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.station-art img{width:72%;height:72%;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));transition:transform .25s}
+.station-art img{width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));transition:transform .25s}
 .station-card:hover .station-art img{transform:scale(1.07)}
 .station-art .art-fallback{font-family:var(--font-t);font-weight:800;font-size:3rem;color:#E11D48;text-shadow:0 2px 12px rgba(225,29,72,.25)}
 .station-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,5,10,.45);opacity:0;transition:.22s;backdrop-filter:blur(2px)}
@@ -384,7 +384,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 
 /* TARJETAS-V2 (spec 2026-09-27, aprobado por Jeremy): tile 3D protagonista, antena EN VIVO, ciudad uniforme */
 .station-art{background:linear-gradient(180deg,#fff,#eef0f5)!important;border-radius:18px;margin:10px 10px 0;aspect-ratio:4/3;box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.9);padding:12px}
-.station-art img{width:76%!important;height:76%!important}
+.station-art img{width:100%!important;height:100%!important}
 .genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
 .station-info b{display:none}
 .station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:var(--ink);white-space:nowrap}
