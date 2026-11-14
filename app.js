@@ -1372,6 +1372,8 @@ renderHistoryRow();
   });
   var nap=pel('navAgregaPod');
   if(nap) nap.addEventListener('click',function(e){ e.preventDefault(); openAgregaPodcast(); });
+  var napm=pel('navAgregaPodM');
+  if(napm) napm.addEventListener('click',function(e){ e.preventDefault(); openAgregaPodcast(); });
 
   /* Envío del formulario "Agrega tu podcast" (portal).
      Colección: podcasts_pendientes (Jeremy aprueba en 1 clic desde Pendientes).
@@ -1421,20 +1423,31 @@ renderHistoryRow();
    existían ahí) y el ReferenceError en rlInitGlobe abortaba todo app.js.
    El cierre se movió al final del archivo. */
 
-(function(){
-  var a=document.getElementById('navAgrega');
-  if(!a) return;
-  a.addEventListener('click',function(e){
-    e.preventDefault();
-    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-    var sec=document.getElementById('agrega-emisora');
-    if(sec) sec.classList.add('active');
-    document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
-    a.classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-    if(window.fbInit) fbInit();
-  });
-})();
+/* Página "Agrega tu emisora" (misma pauta que "Agrega tu podcast").
+   FIX 2026-11-14: el enlace del menú móvil (#agrega-emisora) no tenía
+   manejador y solo cambiaba el hash; ahora se cablean los tres enlaces
+   (escritorio, móvil y "Agrégala aquí" al final de la lista) y el hash
+   #agrega-emisora / #agrega-podcast abre el formulario también al
+   cargar o recargar la página con ese hash (antes mostraba Inicio). */
+function openAgregaEmisora(){
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var sec=document.getElementById('agrega-emisora');
+  if(sec) sec.classList.add('active');
+  document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
+  var a=document.getElementById('navAgrega'); if(a) a.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(window.fbInit) fbInit();
+}
+['navAgrega','navAgregaM','stGoAgrega2'].forEach(function(id){
+  var b=document.getElementById(id);
+  if(b) b.addEventListener('click',function(e){ e.preventDefault(); openAgregaEmisora(); });
+});
+function openAgregaPorHash(){
+  if(location.hash==='#agrega-emisora') openAgregaEmisora();
+  else if(location.hash==='#agrega-podcast') openAgregaPodcast();
+}
+window.addEventListener('hashchange',openAgregaPorHash);
+openAgregaPorHash();
 
 /* ===== CONTADOR-ANIM v1: el número sube contando (0 -> N) al cargar =====
    Pegar AL FINAL de app.js (una sola vez). 100% aditivo: solo observa el
