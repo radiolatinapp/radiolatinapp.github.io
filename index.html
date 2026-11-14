@@ -58,6 +58,7 @@
   <!-- ============ INICIO ============ -->
   <section id="sec-inicio" class="page active">
     <div class="hero">
+      <canvas id="spaceFx" class="space-fx" aria-hidden="true"></canvas>
       <div class="hero-copy">
       <img class="hero-logo" src="assets/logos/d1-logo-512.png" alt="Radio Latina">
       <span class="hero-tag">2.123 emisoras en vivo · 22 países</span>
@@ -296,6 +297,30 @@
         <h3>Radio Latina Premium</h3>
         <p>Suscripción de <b>USD 2.50</b> cada 12 meses: chat sin límites, mensajes privados, elige la emisora de tu alarma y más. Se renueva cada 12 meses.</p>
         <button class="btn btn-primary" id="infoPremiumBtn">Quiero Premium</button>
+      </div>
+      <div class="info-card glass donate-card">
+        <h3>Donaciones</h3>
+        <p>Radio Latina es independiente y vive de sus oyentes. Si donas <b>más de US$ 2,50</b>, te activamos <b>Premium por 12 meses</b>: envía tu comprobante con el botón de abajo.</p>
+        <div class="donate-methods">
+          <div class="donate-method">
+            <b>PayPal</b>
+            <a class="btn btn-primary btn-sm" href="https://paypal.me/jeyko1" target="_blank" rel="noopener">Donar con PayPal</a>
+          </div>
+          <div class="donate-method">
+            <b>Zelle <span class="donate-only">Solo Estados Unidos</span></b>
+            <img class="zelle-qr" src="assets/zelle-qr.jpg" alt="Código QR de Zelle de Jeremy Rico" width="214" height="240">
+            <span>JEREMY RICO</span>
+            <span>rico.jeremy@outlook.com</span>
+            <button class="btn btn-ghost btn-sm" data-copy="rico.jeremy@outlook.com">Copiar correo</button>
+          </div>
+          <div class="donate-method">
+            <b>Nequi <span class="donate-only">Solo Colombia</span></b>
+            <span class="donate-number">3105550224</span>
+            <button class="btn btn-ghost btn-sm" data-copy="3105550224">Copiar número</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="receiptBtn">Enviar comprobante</button>
+        <p class="tiny muted">Donaste más de US$ 2,50 por PayPal, Zelle o Nequi: envía tu comprobante y te activamos Premium por 12 meses.</p>
       </div>
       <div class="info-card glass">
         <h3>Privacidad, en serio</h3>
@@ -727,6 +752,39 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="pmClose">Cerrar</button>
       <a class="btn btn-primary" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar la app</a>
+    </div>
+  </div>
+</div>
+
+<div id="receiptModal" class="modal" hidden>
+  <div class="modal-card glass">
+    <h3>Enviar comprobante</h3>
+    <p class="muted">Donaste más de US$ 2,50: envía tu comprobante y te activamos Premium por 12 meses.</p>
+    <label>Método de donación
+      <select id="rcMethod">
+        <option>PayPal</option>
+        <option>Zelle</option>
+        <option>Nequi</option>
+      </select>
+    </label>
+    <label>Monto (USD)
+      <input id="rcAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ej.: 5.00">
+    </label>
+    <label>Referencia o número de transacción
+      <input id="rcRef" type="text" placeholder="Ej.: 8XJ12345AB" autocomplete="off">
+    </label>
+    <label>Captura del comprobante (opcional)
+      <input id="rcShot" type="file" accept="image/*">
+    </label>
+    <p class="tiny muted">La captura no se puede adjuntar sola al correo: adjúntala tú en el correo que se abrirá.</p>
+    <label>Código de 6 letras de la app (si lo tienes)
+      <input id="rcCode" type="text" maxlength="6" placeholder="Ej.: AB12CD" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    </label>
+    <p id="rcMsg" class="tiny" hidden></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="rcCancel">Cancelar</button>
+      <button class="btn btn-secondary" id="rcCopy">Copiar texto</button>
+      <button class="btn btn-primary" id="rcSend">Enviar por correo</button>
     </div>
   </div>
 </div>

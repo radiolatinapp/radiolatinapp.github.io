@@ -860,6 +860,66 @@ el('linkCodeBtn').addEventListener('click',async function(){
   }catch(e){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; }
 });
 
+/* ---------- donaciones: enviar comprobante (FIX 2026-11-14) ----------
+   Canal de envío: correo (mailto a rico.jeremy@outlook.com, el correo de
+   Zelle, donde llegan los avisos de donación). En el sitio NO hay número de
+   WhatsApp publicado, así que no se inventa ninguno: el reclamo se guarda
+   en este navegador (localStorage) y se envía por el correo que se abre ya
+   lleno; la captura se adjunta a mano en ese correo (un mailto no adjunta
+   archivos). Si donó más de US$ 2,50, el dueño lo activa Premium 12 meses. */
+var RC_LAST_BODY='';
+function rcBuildBody(){
+  var m=el('rcMethod').value, amt=parseFloat(el('rcAmount').value)||0;
+  var ref=el('rcRef').value.trim(), code=(el('rcCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  var shot=el('rcShot').files&&el('rcShot').files[0]?el('rcShot').files[0].name:'(sin captura)';
+  var d=new Date();
+  return 'Comprobante de donación — Radio Latina\n'
+    +'Método: '+m+'\n'
+    +'Monto: US$ '+amt.toFixed(2)+'\n'
+    +'Referencia: '+(ref||'(sin referencia)')+'\n'
+    +'Código de la app: '+(code||'(sin código)')+'\n'
+    +'Captura: '+shot+'\n'
+    +'Fecha: '+d.toLocaleString('es-CO')+'\n'
+    +(amt>2.50?'\nMonto mayor a US$ 2,50: activar Premium por 12 meses.':'\nMonto de US$ 2,50 o menos: no alcanza para Premium (tiene que ser más de US$ 2,50).');
+}
+function rcValidate(){
+  var msg=el('rcMsg');
+  var amt=parseFloat(el('rcAmount').value);
+  if(!(amt>0)){ msg.hidden=false; msg.textContent='Escribe el monto que donaste.'; return false; }
+  if(!el('rcRef').value.trim()){ msg.hidden=false; msg.textContent='Escribe la referencia o el número de transacción.'; return false; }
+  msg.hidden=true; msg.textContent='';
+  return true;
+}
+el('receiptBtn').addEventListener('click',function(){ el('rcMsg').hidden=true; openModal('receiptModal'); });
+el('rcCancel').addEventListener('click',function(){ closeModal('receiptModal'); });
+el('rcCopy').addEventListener('click',function(){
+  if(!rcValidate()) return;
+  var body=rcBuildBody(); RC_LAST_BODY=body;
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(body).then(function(){ toast('Texto del comprobante copiado'); }).catch(function(){ toast('No se pudo copiar'); }); }
+  else toast('Copia el texto a mano');
+});
+el('rcSend').addEventListener('click',function(){
+  if(!rcValidate()) return;
+  var body=rcBuildBody(); RC_LAST_BODY=body;
+  var amt=parseFloat(el('rcAmount').value)||0;
+  try{
+    var list=[]; try{ list=JSON.parse(localStorage.getItem('rl_receipt_claims')||'[]'); }catch(e){ list=[]; }
+    list.unshift({method:el('rcMethod').value,amount:amt,ref:el('rcRef').value.trim(),code:(el('rcCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,''),shot:el('rcShot').files&&el('rcShot').files[0]?el('rcShot').files[0].name:'',at:Date.now()});
+    localStorage.setItem('rl_receipt_claims',JSON.stringify(list.slice(0,20)));
+  }catch(e){}
+  var sub='Comprobante de donación Radio Latina — '+el('rcMethod').value+' US$ '+amt.toFixed(2);
+  window.location.href='mailto:rico.jeremy@outlook.com?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
+  closeModal('receiptModal');
+  toast(amt>2.50?'Comprobante enviado: adjunta la captura en el correo y te activamos Premium por 12 meses':'Comprobante enviado: gracias por donar');
+});
+/* copiar correo de Zelle y número de Nequi */
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('[data-copy]'):null; if(!b) return;
+  var v=b.getAttribute('data-copy');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(function(){ toast('Copiado: '+v); }).catch(function(){ toast(v); }); }
+  else toast(v);
+});
+
 /* ---------- FIX-PREMIUM-ALIGN (Tiger 2026-09-27) ----------
    El link-code guarda en localStorage el uid DE LA APP, pero el navegador
    escribe con su uid ANONIMO. Las reglas exigen premium_uids/{request.auth.uid}.
@@ -899,6 +959,7 @@ async function initChat(){
 /* ---------- init ---------- */
 initCatalog();
 rlInitGlobe();
+rlInitSpaceFx();
 /* tema guardado (el <head> ya lo aplicó para evitar flash; aquí se sincroniza el botón) */
 (function(){ var t='auto'; try{ t=localStorage.getItem(THEME_KEY)||'auto'; }catch(e){} applyTheme(t); })();
 /* temporizador: rearmar si sobrevivió una recarga */
@@ -1598,6 +1659,228 @@ function rlInitGlobe(){
     io2.observe(wrap);
   } else { boot(); }
   document.addEventListener('visibilitychange',function(){ rlGlobeVisible=!document.hidden; });
+}
+
+/* ================= UNIVERSO ALREDEDOR DEL GLOBO (capa espacial) =================
+   Canvas #spaceFx detrás del contenido del hero: 2 satélites en órbita alrededor
+   del globo emitiendo ondas de radio, 2 planetas a la deriva (1 en móvil) y
+   estrellas tenues y escasas. A propósito con menos elementos que en la app
+   para que se vea elegante y sin amontonar. pointer-events:none: jamás tapa
+   el globo, la pastilla ni ningún control. Se pausa si la pestaña se oculta
+   o el hero sale de la vista; con «reducir movimiento» queda una escena fija. */
+function rlInitSpaceFx(){
+  var cv=el('spaceFx'); if(!cv) return;
+  var hero=cv.parentElement; if(!hero) return;
+  var ctx=cv.getContext('2d'); if(!ctx) return;
+  var reduced=false;
+  try{ reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var W=0,H=0,inView=true,raf=null,last=0,shootAt=9000;
+  var stars=[],sats=[],planets=[],meteor=null;
+  function isMob(){ return window.innerWidth<=760; }
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function build(){
+    var mob=isMob(),i,n;
+    stars=[];
+    n=mob?18:46;
+    for(i=0;i<n;i++) stars.push({x:rnd(0,W),y:rnd(0,H),r:rnd(0.5,1.4),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.10,0.32)});
+    var wrap=el('globeWrap'),cx=W/2,cy=H/2,rx=W*0.42,ry=H*0.36;
+    if(wrap){
+      var hr=hero.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+      cx=wr.left-hr.left+wr.width/2; cy=wr.top-hr.top+wr.height/2;
+      rx=Math.min(wr.width/2+64,W*0.48); ry=Math.min(wr.height/2+56,H*0.42);
+    }
+    sats=[
+      {a:rnd(0,6.28),sp:0.055,rx:rx,ry:ry,cx:cx,cy:cy,wt:0,rings:[],col:'#00F2FE',sc:1},
+      {a:rnd(0,6.28),sp:-0.042,rx:rx*0.86,ry:ry*0.86,cx:cx,cy:cy,wt:1.2,rings:[],col:'#FACC15',sc:0.85}
+    ];
+    if(mob) sats.length=1;
+    planets=[];
+    if(mob) planets.push({kind:'ringed',x:W*0.88,y:H*0.05,r:15,vx:-1.0,vy:0.7,ph:rnd(0,6.28)});
+    else{
+      planets.push({kind:'ringed',x:W*0.07,y:H*0.86,r:30,vx:1.6,vy:-0.8,ph:rnd(0,6.28)});
+      planets.push({kind:'rocky',x:W*0.96,y:H*0.10,r:20,vx:-1.4,vy:0.9,ph:rnd(0,6.28)});
+    }
+  }
+  function resize(){
+    var dpr=Math.min(window.devicePixelRatio||1,1.75);
+    W=hero.clientWidth; H=hero.clientHeight;
+    if(!W||!H) return;
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    build();
+    if(reduced) draw(1000,0);
+  }
+  function glow(x,y,r,color,a){
+    var g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,color); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=a; ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
+  }
+  function terminator(x,y,r,ang){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.clip();
+    var g=ctx.createLinearGradient(x-Math.cos(ang)*r,y-Math.sin(ang)*r,x+Math.cos(ang)*r,y+Math.sin(ang)*r);
+    g.addColorStop(0,'rgba(2,6,18,0)'); g.addColorStop(0.55,'rgba(2,6,18,0)'); g.addColorStop(1,'rgba(2,6,18,0.55)');
+    ctx.fillStyle=g; ctx.fillRect(x-r,y-r,r*2,r*2);
+    ctx.restore();
+  }
+  function drawPlanet(p,t){
+    var x=p.x,y=p.y,r=p.r;
+    if(p.kind==='ringed'){
+      glow(x,y,r*2.6,'rgba(0,242,254,0.10)',0.5);
+      ctx.save(); ctx.translate(x,y); ctx.rotate(-0.32);
+      ctx.strokeStyle='rgba(214,186,138,0.55)'; ctx.lineWidth=r*0.28;
+      ctx.beginPath(); ctx.ellipse(0,0,r*1.9,r*0.55,0,0,6.2832); ctx.stroke();
+      ctx.strokeStyle='rgba(90,66,32,0.5)'; ctx.lineWidth=r*0.05;
+      ctx.beginPath(); ctx.ellipse(0,0,r*1.55,r*0.45,0,0,6.2832); ctx.stroke();
+      ctx.restore();
+      var g=ctx.createRadialGradient(x-r*0.35,y-r*0.4,r*0.1,x,y,r);
+      g.addColorStop(0,'#f3e6c8'); g.addColorStop(0.45,'#d9b878'); g.addColorStop(0.8,'#a67c3d'); g.addColorStop(1,'#6b4d24');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.clip();
+      ctx.fillStyle='rgba(255,244,214,0.28)'; ctx.fillRect(x-r,y-r*0.45,r*2,r*0.16);
+      ctx.fillStyle='rgba(120,84,32,0.30)'; ctx.fillRect(x-r,y+r*0.08,r*2,r*0.14);
+      ctx.fillStyle='rgba(255,244,214,0.18)'; ctx.fillRect(x-r,y+r*0.38,r*2,r*0.12);
+      ctx.fillStyle='rgba(40,26,8,0.35)';
+      ctx.beginPath(); ctx.ellipse(x,y+r*0.28,r*0.95,r*0.30,-0.32,0,6.2832); ctx.fill();
+      ctx.restore();
+      ctx.save(); ctx.translate(x,y); ctx.rotate(-0.32);
+      ctx.strokeStyle='rgba(226,198,150,0.75)'; ctx.lineWidth=r*0.28;
+      ctx.beginPath(); ctx.ellipse(0,0,r*1.9,r*0.55,0,0,Math.PI); ctx.stroke();
+      ctx.restore();
+      var ma=t*0.0004+p.ph, mx=x+Math.cos(ma)*r*2.6, my=y+Math.sin(ma)*r*1.1;
+      ctx.fillStyle='rgba(226,232,240,0.9)'; ctx.beginPath(); ctx.arc(mx,my,Math.max(1.5,r*0.09),0,6.2832); ctx.fill();
+      terminator(x,y,r,2.4);
+      glow(x,y,r*1.5,'rgba(250,204,21,0.08)',0.6);
+    }else{
+      glow(x,y,r*2.4,'rgba(249,115,22,0.10)',0.5);
+      var g2=ctx.createRadialGradient(x-r*0.35,y-r*0.4,r*0.1,x,y,r);
+      g2.addColorStop(0,'#e8a37e'); g2.addColorStop(0.45,'#c05a30'); g2.addColorStop(0.8,'#8a3a1c'); g2.addColorStop(1,'#5e2410');
+      ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+      ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.clip();
+      ctx.fillStyle='rgba(90,32,10,0.35)';
+      ctx.beginPath(); ctx.ellipse(x-r*0.4,y+r*0.3,r*0.45,r*0.28,0.5,0,6.2832); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x+r*0.35,y-r*0.45,r*0.35,r*0.22,-0.4,0,6.2832); ctx.fill();
+      var cr=[[-0.3,-0.15,0.20],[0.25,0.15,0.15],[0.05,-0.45,0.12],[-0.05,0.45,0.16]];
+      for(var i=0;i<cr.length;i++){
+        var cxp=x+cr[i][0]*r, cyp=y+cr[i][1]*r, crp=cr[i][2]*r;
+        ctx.fillStyle='rgba(70,24,8,0.5)'; ctx.beginPath(); ctx.arc(cxp,cyp,crp,0,6.2832); ctx.fill();
+        ctx.strokeStyle='rgba(255,220,190,0.35)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.arc(cxp,cyp,crp,Math.PI*0.9,Math.PI*1.7); ctx.stroke();
+      }
+      ctx.fillStyle='rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.ellipse(x,y-r*0.82,r*0.55,r*0.22,0,0,6.2832); ctx.fill();
+      ctx.restore();
+      terminator(x,y,r,2.4);
+    }
+  }
+  function drawSat(s,t,dt){
+    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc*(isMob()?0.8:1);
+    s.wt-=dt;
+    if(s.wt<=0){ s.wt=2.4; s.rings.push({r:8,a:0.55}); }
+    for(var i=s.rings.length-1;i>=0;i--){
+      var rg=s.rings[i]; rg.r+=26*dt; rg.a-=0.30*dt;
+      if(rg.a<=0||rg.r>95){ s.rings.splice(i,1); continue; }
+      ctx.globalAlpha=rg.a*0.30; ctx.strokeStyle=s.col; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.arc(x,y,rg.r,0,6.2832); ctx.stroke();
+      ctx.globalAlpha=rg.a; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.arc(x,y,rg.r,0,6.2832); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(s.a)*0.25); ctx.scale(sc,sc);
+    ctx.fillStyle='#1e40af';
+    ctx.fillRect(-17,-3,10,6); ctx.fillRect(7,-3,10,6);
+    ctx.strokeStyle='rgba(147,197,253,0.7)'; ctx.lineWidth=0.6;
+    ctx.strokeRect(-17,-3,10,6); ctx.strokeRect(7,-3,10,6);
+    ctx.beginPath(); ctx.moveTo(-12,-3); ctx.lineTo(-12,3); ctx.moveTo(12,-3); ctx.lineTo(12,3); ctx.stroke();
+    ctx.fillStyle='#d4a017'; ctx.fillRect(-7,-4.5,14,9);
+    ctx.fillStyle='#facc15'; ctx.fillRect(-7,-4.5,14,2);
+    ctx.fillStyle='#cbd5e1'; ctx.fillRect(7,-3,5,6);
+    ctx.fillStyle='#0f172a'; ctx.beginPath(); ctx.arc(9.5,0,1.4,0,6.2832); ctx.fill();
+    ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(-9,-6,5,Math.PI*0.9,Math.PI*1.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-9,-1); ctx.lineTo(-7,-4.5); ctx.stroke();
+    ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(2,-4.5); ctx.lineTo(4,-10); ctx.stroke();
+    if(Math.sin(t*0.006)>0){ ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.arc(0,-6.5,1.8,0,6.2832); ctx.fill(); }
+    ctx.fillStyle='#22c55e'; ctx.beginPath(); ctx.arc(17,0,1.2,0,6.2832); ctx.fill();
+    ctx.restore();
+  }
+  function draw(t,dt){
+    ctx.clearRect(0,0,W,H);
+    var i;
+    for(i=0;i<stars.length;i++){
+      var st=stars[i], al=st.a*(0.6+0.4*Math.sin(t*0.001*st.s+st.p));
+      ctx.globalAlpha=Math.max(0.05,al); ctx.fillStyle='#fff';
+      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    for(i=0;i<planets.length;i++){
+      var p=planets[i];
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      if(p.x<W*0.06||p.x>W*0.94) p.vx*=-1;
+      if(p.y<H*0.08||p.y>H*0.92) p.vy*=-1;
+      p.x=Math.max(p.r+4,Math.min(W-p.r-4,p.x));
+      p.y=Math.max(p.r+4,Math.min(H-p.r-4,p.y));
+      drawPlanet(p,t);
+    }
+    for(i=0;i<sats.length;i++){
+      var s=sats[i];
+      s.a+=s.sp*dt;
+      drawSat(s,t,dt);
+    }
+    if(!isMob()){
+      if(!meteor&&t>shootAt){
+        meteor={x:rnd(W*0.35,W*0.95),y:rnd(0,H*0.25),vx:-340,vy:190,life:1};
+        shootAt=t+rnd(14000,22000);
+      }
+      if(meteor){
+        meteor.x+=meteor.vx*dt; meteor.y+=meteor.vy*dt; meteor.life-=dt*0.9;
+        if(meteor.life<=0||meteor.x<-40||meteor.y>H+40){ meteor=null; }
+        else{
+          var mg=ctx.createLinearGradient(meteor.x,meteor.y,meteor.x-meteor.vx*0.28,meteor.y-meteor.vy*0.28);
+          mg.addColorStop(0,'rgba(255,255,255,'+(0.9*meteor.life)+')');
+          mg.addColorStop(1,'rgba(255,255,255,0)');
+          ctx.strokeStyle=mg; ctx.lineWidth=1.6;
+          ctx.beginPath(); ctx.moveTo(meteor.x,meteor.y);
+          ctx.lineTo(meteor.x-meteor.vx*0.28,meteor.y-meteor.vy*0.28); ctx.stroke();
+          ctx.fillStyle='rgba(255,255,255,'+(0.9*meteor.life)+')';
+          ctx.beginPath(); ctx.arc(meteor.x,meteor.y,1.6,0,6.2832); ctx.fill();
+        }
+      }
+    }
+  }
+  function frame(ts){
+    raf=null;
+    if(!inView||document.hidden) return;
+    var dt=Math.min(0.05,((ts-last)/1000)||0.016); last=ts;
+    draw(ts,dt);
+    raf=requestAnimationFrame(frame);
+  }
+  function kick(){
+    if(reduced||!inView||document.hidden||raf) return;
+    last=(window.performance&&performance.now)?performance.now():0;
+    raf=requestAnimationFrame(frame);
+  }
+  resize();
+  if(reduced){ draw(1000,0); return; }
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        inView=en.isIntersecting;
+        if(inView) kick();
+      });
+    }).observe(hero);
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) kick();
+  });
+  if('ResizeObserver' in window){
+    new ResizeObserver(function(){ resize(); if(!reduced) kick(); }).observe(hero);
+  }else{
+    window.addEventListener('resize',function(){ resize(); if(!reduced) kick(); });
+  }
+  kick();
 }
 
 /* ================= MENÚ MÓVIL (hamburguesa) ================= */
