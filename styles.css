@@ -63,7 +63,7 @@ img{display:block;max-width:100%}
 .btn-ghost:hover{background:rgba(255,255,255,.13)}
 .btn-lg{padding:14px 28px;font-size:1.02rem;border-radius:16px}
 .btn-sm{padding:8px 14px;font-size:.85rem;border-radius:11px}
-.linklike{background:none;border:0;color:var(--brand2);font-weight:700;font-size:.92rem}
+.linklike{background:none;border:0;color:var(--brand2);font-weight:700;font-size:.92rem;white-space:nowrap}
 .linklike:hover{text-decoration:underline}
 .linklike.danger{color:#f87171}
 .icon-btn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);width:40px;height:40px;border-radius:12px;font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center}
@@ -267,7 +267,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .footer-donate .donate-method b{display:flex;flex-direction:column;align-items:center;min-height:46px}
   .footer-donate .btn-kofi{padding:7px 6px;font-size:.75rem}
   .footer-donate .btn-kofi svg{width:14px;height:14px}
-  .footer-donate .donate-only{display:block;margin:4px auto 0;font-size:.62rem;padding:2px 6px;white-space:normal}
+  .footer-donate .donate-only{display:block;margin:4px auto 0;font-size:.62rem;padding:2px 6px;white-space:nowrap}
   .footer-donate .zelle-qr{width:84px}
   .footer-donate .donate-number{font-size:.9rem}
   .footer-donate .donate-method span{font-size:.78rem;overflow-wrap:break-word}
@@ -358,11 +358,30 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .hero{padding-top:36px}
   .cards-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:11px}
   .topbar .btn-sm{margin-left:auto}
-  .playerbar{bottom:76px}
+  .playerbar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
   .toast{bottom:150px}
 }
 @media (min-width:761px){
   .bottomnav{display:none!important}
+}
+
+/* FIX 2026-11-14 — reproductor a 390 px: el contenido fijo (logo 84 +
+   ecualizador + 5 botones + huecos) sumaba ~403 px y desbordaba los
+   366 px útiles: la ✕ quedaba medio fuera de pantalla y no se podía
+   pulsar, y el subtítulo y la burbuja de anuncios se solapaban sobre
+   los controles. Se achican logo, botones y huecos para que todo quepa,
+   y el subtítulo y la burbuja recortan con puntos suspensivos. */
+@media (max-width:420px){
+  .playerbar{left:8px;right:8px;gap:6px;padding:8px 10px}
+  .pb-logo{width:48px;height:48px;border-radius:12px}
+  .eq{gap:2px;height:20px}
+  .eq span{width:3px}
+  .pb-btn{width:40px;height:40px;font-size:1rem}
+  .pb-tool{width:32px;height:32px;font-size:.9rem}
+  .pb-close{width:30px;height:30px;font-size:.8rem}
+  .pb-meta b{font-size:.85rem}
+  #pbSub{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #pbAdsBadge{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 
 /* ===== Tema claro (modo día/noche; acento ámbar #B45309 para contraste) ===== */
@@ -386,6 +405,21 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 [data-theme="light"] .stat b{color:#16161d}
 [data-theme="light"] .navlink.active{color:#16161d}
 [data-theme="light"] .info-card p,[data-theme="light"] .info-card li,[data-theme="light"] .faq details p{color:#3c3a45}
+/* FIX 2026-11-14 — tarjetas «Todo Radio Latina» en tema claro: el fondo
+   era --bg-surface (#0A152C, azul oscuro) y el título heredaba --ink
+   (#16161d, oscuro): oscuro sobre oscuro, sin contraste. En claro la
+   tarjeta es blanca con título oscuro, texto gris y icono ámbar. Lo
+   mismo para el pie del globo, que quedaba gris claro sobre fondo claro. */
+[data-theme="light"] .feature-card{background:#ffffff;border-color:rgba(20,20,30,.12)}
+[data-theme="light"] .feature-card h3{color:#16161d}
+[data-theme="light"] .feature-card p{color:#6b6a76}
+[data-theme="light"] .feature-card svg{color:#B45309}
+[data-theme="light"] .globe-caption{color:#6b6a76}
+[data-theme="light"] .globe-caption b{color:#B45309}
+/* FIX 2026-11-14 — navegación inferior en tema claro: el botón activo
+   era texto blanco sobre el degradado amarillo (casi blanco): la
+   etiqueta «Radio» no se leía. En claro el activo es texto oscuro. */
+[data-theme="light"] .bnav.active{color:#16161d}
 [data-theme="light"] .grad-text{background:linear-gradient(92deg,#B45309,#92400E 45%,#CA8A04);-webkit-background-clip:text;background-clip:text;color:transparent}
 [data-theme="light"] .btn-ghost{color:#16161d}
 [data-theme="light"] .btn-ghost:hover{background:rgba(20,20,30,.07)}
@@ -472,7 +506,7 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
 .station-info b{display:block;text-align:center;font-size:.9rem;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .station-info span{display:block;text-align:center;font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.station-info .station-freq{display:block;text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.04em;color:var(--brand2)}
+.station-info .station-freq{display:block;width:fit-content;margin:3px auto 1px;text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.04em;color:#241a00;background:var(--brand2);border-radius:999px;padding:2px 9px;white-space:nowrap}
 .live-pill{display:block;text-align:center;margin-top:2px;line-height:1.4;background:none;padding:0;filter:drop-shadow(0 0 6px rgba(0,230,118,.8));animation:livePulse 2.4s ease-in-out infinite}
 @keyframes livePulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.12);opacity:1}}
 

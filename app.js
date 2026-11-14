@@ -1773,7 +1773,7 @@ function rlInitSpaceFx(){
      al desplazar, el hero sube y el satélite y el planeta pasaban bajo la
      cabecera fija (.topbar, sticky) y se veían cortados por la mitad.
      Cada cuerpo se desvanece antes de llegar a ella: con su borde superior
-     a HDR_ZONE (24 px) o más por debajo del borde inferior de la cabecera
+     a HDR_ZONE (64 px) o más por debajo del borde inferior de la cabecera
      está entero (opacidad 1); cuando el borde toca la cabecera ya es
      invisible (opacidad 0). El satélite en móvil lleva halo de 34 px y el
      planeta en órbita sobresale r*1.2 con su luna; en escritorio los
@@ -1785,7 +1785,7 @@ function rlInitSpaceFx(){
      oculta de golpe al llegar a la cabecera. */
   var topbarEl=document.querySelector('.topbar');
   var filterOK=false; try{ filterOK=('filter' in ctx); }catch(e){}
-  var HDR_ZONE=24;
+  var HDR_ZONE=64;
   function hdrFadeTop(hrTop,hdrB,y,ext){ var f=(hrTop+y-ext-hdrB)/HDR_ZONE; return f<=0?0:(f>=1?1:f); }
   function hdrFadeCtr(hrTop,hdrB,y){ var f=(hrTop+y-hdrB)/HDR_ZONE; return f<=0?0:(f>=1?1:f); }
   function drawFaded(fade,fn){
@@ -2069,7 +2069,7 @@ function rlInitSpaceFx(){
       }
       /* Desvanecer antes de la cabecera: el planeta en órbita, por su
          borde superior (luna incluida); el de la deriva, por su centro. */
-      var pf=p.orb?hdrFadeTop(hrTop,hdrB,p.y,p.r*1.2+4):hdrFadeCtr(hrTop,hdrB,p.y);
+      var pf=p.orb?hdrFadeTop(hrTop,hdrB,p.y,p.r*1.2+8):hdrFadeCtr(hrTop,hdrB,p.y);
       drawFaded(pf,function(){ drawPlanet(p,t); });
     }
     for(i=0;i<sats.length;i++){
@@ -2078,7 +2078,7 @@ function rlInitSpaceFx(){
       /* La y del satélite es la misma que calcula drawSat; el halo en
          móvil sobresale 34 px y el cuerpo ~14 px en escritorio. */
       var sy=s.cy+Math.sin(s.a)*s.ry;
-      drawFaded(hdrFadeTop(hrTop,hdrB,sy,isMob()?36:14),function(){ drawSat(s,t,dt); });
+      drawFaded(hdrFadeTop(hrTop,hdrB,sy,isMob()?40:14),function(){ drawSat(s,t,dt); });
     }
     if(!isMob()){
       if(!meteor&&t>shootAt){
