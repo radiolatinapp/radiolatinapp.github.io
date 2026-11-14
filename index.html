@@ -20,9 +20,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 </head>
 <body>
-<!-- Barra de apoyo: sale UNA VEZ por apertura (al cargar), dura 10 s y se
+<!-- Barra de apoyo: sale UNA VEZ por sesión (al cargar), dura 10 s y se
      cierra sola; la ✕ la quita antes y «Donar» baja al bloque de
-     donaciones del pie. No vuelve a salir mientras se usa la página. -->
+     donaciones del pie. No vuelve a salir mientras se usa la página ni
+     al recargar en la misma sesión (sessionStorage). -->
 <div id="supportBar" class="support-bar" role="status">
   <span class="support-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
   <p class="support-text">Apóyame con mis estudios: este proyecto me ayuda a seguir estudiando y a apoyar a mi familia</p>
@@ -148,7 +149,7 @@
       <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20V8M15 20v-9M20 20V5"/></svg><h3>Ecualizador</h3><p>Ajusta graves y agudos a tu gusto desde la aplicación.</p></div>
       <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h3>Temporizador</h3><p>La radio se apaga sola en el tiempo que elijas.</p></div>
       <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><h3>Mesita de Noche</h3><p>La pantalla se queda tranquila mientras la radio sigue sonando.</p></div>
-      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg><h3>Alarma</h3><p>Despierta con tu emisora favorita, a la hora y los días que elijas.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg><h3>Alarma</h3><p>Despierta con tu emisora favorita, a la hora y los días que elijas, en la app.</p></div>
     </div>
 
     <div class="cta-banner glass">
@@ -305,12 +306,12 @@
       <div class="info-card glass premium-card">
         <div class="gate-icon"><svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></div>
         <h3>Radio Latina Premium</h3>
-        <p>Suscripción de <b>USD 2.50</b> cada 12 meses: chat sin límites, mensajes privados, elige la emisora de tu alarma y más. Se renueva cada 12 meses.</p>
+        <p>Suscripción de <b>USD 2.50</b> cada 12 meses: sin anuncios, temporizador sin límite, chat sin límites, chat exclusivo Premium, mensajes privados, salas privadas, elige la emisora de tu alarma y contenido exclusivo. Se renueva cada 12 meses.</p>
         <button class="btn btn-primary" id="infoPremiumBtn">Quiero Premium</button>
       </div>
       <div class="info-card glass">
         <h3>Privacidad, en serio</h3>
-        <p>La app funciona sin crear cuenta. Tus favoritas y ajustes se quedan en tu teléfono. <b>Radio Latina no muestra anuncios de la app</b>; el audio de las emisoras puede incluir los suyos, que vienen en su señal y no podemos quitar.</p>
+        <p>La app funciona sin crear cuenta. Tus favoritas y ajustes se quedan en tu teléfono. Con Premium, tu experiencia en la app es sin anuncios; el audio de las emisoras puede incluir los anuncios de su proveedor, que vienen en su señal y no podemos quitar.</p>
         <p style="margin-top:10px"><a class="linklike" href="politica-de-privacidad.html" target="_blank" rel="noopener">Leer la política de privacidad →</a></p>
       </div>
       <div class="info-card glass">
@@ -322,7 +323,7 @@
         <h3>Preguntas frecuentes</h3>
         <details>
           <summary>¿Radio Latina tiene anuncios?</summary>
-          <p>No mostramos anuncios propios: ni en la app ni en la web. Eso sí, el audio de las emisoras puede incluir los anuncios de su proveedor —vienen en su señal y no los podemos quitar— y en ese caso verás la insignia «Puede incluir anuncios de su proveedor».</p>
+          <p>Radio Latina no muestra anuncios propios en la app ni en la web. El audio de las emisoras puede incluir los anuncios de su proveedor —vienen en su señal y no los podemos quitar— y en ese caso verás la insignia «Puede incluir anuncios de su proveedor». Con Premium, tu experiencia en la app es sin anuncios.</p>
         </details>
         <details>
           <summary>¿Necesito crear una cuenta?</summary>
@@ -338,7 +339,7 @@
         </details>
         <details>
           <summary>¿Qué incluye Premium?</summary>
-          <p>Es una suscripción de USD 2.50 cada 12 meses en la app: chat sin límites, mensajes privados, elegir la emisora de tu alarma y apoyar a la radio latina independiente. Se renueva cada 12 meses. En la web el chat gratis permite 10 mensajes al día.</p>
+          <p>Es una suscripción de USD 2.50 cada 12 meses en la app: sin anuncios, temporizador sin límite, chat sin límites, chat exclusivo Premium, mensajes privados, crear y escribir en salas privadas (leerlas es gratis), elegir la emisora de tu alarma, contenido exclusivo y apoyar a la radio latina independiente. Se renueva cada 12 meses. En la web el chat gratis permite 10 mensajes al día y el temporizador gratis 2 usos al día.</p>
         </details>
       </div>
       <div class="info-card glass">
@@ -720,9 +721,14 @@
     <div class="gate-icon"><svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></div>
     <h3>Radio Latina Premium</h3>
     <ul class="check-list">
+      <li>Sin anuncios en la app</li>
+      <li>Temporizador sin límite (gratis: 2 usos al día)</li>
       <li>Chat sin límites (gratis: 10 mensajes/día)</li>
+      <li>Chat exclusivo Premium</li>
       <li>Mensajes privados con quien quieras</li>
+      <li>Salas privadas: crear y escribir (leerlas es gratis)</li>
       <li>Elige la emisora de tu alarma</li>
+      <li>Contenido exclusivo</li>
       <li>Apoya a la radio latina independiente</li>
     </ul>
     <p class="price">Suscripción · <b>USD 2.50</b> · cada 12 meses</p>

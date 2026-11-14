@@ -62,16 +62,33 @@ function logoHTML(s){
   if(logo){ return '<div class="station-art" style="background:'+grad+'"><img src="'+esc(logo)+'" alt="" loading="lazy" onerror="this.remove()"></div>'; }
   return '<div class="station-art" style="background:'+grad+'"></div>';
 }
+/* Frecuencia en el nombre («96.1 FM», «1230 AM»): se muestra aparte y se
+   quita del nombre visible para que las tarjetas no repitan el dato; si al
+   quitarla el nombre quedaría de menos de 4 letras («La 91.1 FM»), se deja
+   el nombre completo y no se muestra la frecuencia aparte. */
+function stationFreq(name){
+  var m=String(name||'').match(/(\d{2,3}(?:[.,]\d)?)\s*(FM|AM)\b/i);
+  if(!m) return '';
+  return m[1].replace(',','.')+' '+m[2].toUpperCase();
+}
+function stationDisplayName(s){
+  var f=stationFreq(s.name), n=String(s.name||'');
+  if(!f) return n;
+  var sin=n.replace(/(\d{2,3}(?:[.,]\d)?)\s*(FM|AM)\b/i,'').replace(/\s{2,}/g,' ').replace(/\s*[-\u2013\u2014]\s*$/,'').trim();
+  return sin.length>=4?sin:n;
+}
 function cardHTML(s){
   var fav=FAVS[s.name]?' on':'';
   var playing=current&&current.name===s.name?'<span class="station-playing">🔊 Sonando</span>':'';
+  var freq=stationFreq(s.name), disp=stationDisplayName(s);
+  var freqTag=(freq&&disp!==s.name)?'<span class="station-freq">'+esc(freq)+'</span>':'';
   return '<button class="station-card" data-st="'+esc(s.name)+'">'+
     '<span class="fav-btn'+fav+'" data-fav="'+esc(s.name)+'" title="Favorita">♥</span>'+
     '<span class="share-btn" data-share="'+esc(s.name)+'" title="Compartir" role="button" tabindex="0">↗</span>'+
     playing+logoHTML(s)+
     '<span class="station-play"><span class="pp">▶</span></span>'+
     '<span class="genre-tag">'+esc(s.genre||'Radio')+'</span>'+
-    '<span class="station-info"><span>'+esc(s.city||s.country||'')+'</span><span class="live-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="1.6" fill="#00E676" stroke="none"/><path d="M12 15v6"/><path d="M8.2 9.2a5.4 5.4 0 0 1 7.6 0"/><path d="M5.8 6.8a8.8 8.8 0 0 1 12.4 0"/></svg></span></span>'+
+    '<span class="station-info"><b>'+esc(disp)+'</b>'+freqTag+'<span>'+esc(s.city||s.country||'')+'</span><span class="live-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="1.6" fill="#00E676" stroke="none"/><path d="M12 15v6"/><path d="M8.2 9.2a5.4 5.4 0 0 1 7.6 0"/><path d="M5.8 6.8a8.8 8.8 0 0 1 12.4 0"/></svg></span></span>'+
   '</button>';
 }
 function findStation(name){ for(var i=0;i<STATIONS.length;i++) if(STATIONS[i].name===name) return STATIONS[i]; return null; }
@@ -169,8 +186,17 @@ audio.addEventListener('error',function(){ if(current) onStreamError(current); }
 audio.addEventListener('playing',function(){ setPlayingUI(true); });
 audio.addEventListener('pause',function(){ setPlayingUI(false); });
 
-/* ================= TEMPORIZADOR DE APAGADO (gratis en web) ================= */
-var SLEEP_KEY='rl_sleep_ends', rlSleepEndsAt=0, rlSleepTimer=null, rlSleepPoll=null;
+/* ================= TEMPORIZADOR DE APAGADO (Premium; gratis 2 usos/día) =================
+   Regla del dueño (igual que la app): Premium ilimitado; gratis 2 usos por
+   día. El cupo se descuenta solo al iniciar una cuenta real, nunca al
+   cancelar. Al tercer uso gratis se abre el modal Premium. */
+var SLEEP_KEY='rl_sleep_ends', SLEEP_USES_KEY='rl_timer_uses', rlSleepEndsAt=0, rlSleepTimer=null, rlSleepPoll=null;
+function timerUsesToday(){
+  try{ var d=JSON.parse(localStorage.getItem(SLEEP_USES_KEY)||'null')||{day:'',n:0}; return d.day===new Date().toDateString()?(d.n||0):0; }catch(e){ return 0; }
+}
+function bumpTimerUse(){
+  try{ localStorage.setItem(SLEEP_USES_KEY, JSON.stringify({day:new Date().toDateString(), n:timerUsesToday()+1})); }catch(e){}
+}
 function sleepRemaining(){ return rlSleepEndsAt>0?Math.max(0,rlSleepEndsAt-Date.now()):0; }
 function setSleep(minutes){
   cancelSleep(false);
@@ -198,7 +224,7 @@ function refreshSleepUI(){
   var rem=sleepRemaining(), mins=Math.ceil(rem/60000);
   var badge=el('tmBadge');
   badge.hidden=!(rem>0); badge.textContent=rem>0?mins+'′':'';
-  el('tmStatus').textContent=rem>0?('Activo: la reproducción se detendrá en '+mins+' min.'):'';
+  el('tmStatus').textContent=rem>0?('Activo: la reproducción se detendrá en '+mins+' min.'):(premiumCache===true?'Premium: temporizador ilimitado.':('Gratis: te quedan '+Math.max(0,2-timerUsesToday())+' de 2 usos del temporizador hoy.'));
   el('tmCancel').hidden=!(rem>0);
 }
 function ensureSleepPoll(){
@@ -214,7 +240,15 @@ function initSleepPresets(){
   [15,30,45,60,90].forEach(function(m){
     var b=document.createElement('button');
     b.className='chip'; b.type='button'; b.setAttribute('data-m',m); b.textContent=m+' min';
-    b.addEventListener('click',function(){ setSleep(m); });
+    b.addEventListener('click',async function(){
+      var prem=false; try{ prem=await rlIsPremiumWeb(); }catch(e){ prem=false; }
+      if(!prem&&timerUsesToday()>=2){
+        toast('⏱️ Temporizador Premium: el plan gratis lo usa 2 veces al día y ya usaste las 2 de hoy. Con Premium es ilimitado.');
+        openPremium(); return;
+      }
+      if(!prem) bumpTimerUse();
+      setSleep(m);
+    });
     box.appendChild(b);
   });
 }
@@ -315,9 +349,12 @@ el('resumeGo').addEventListener('click',function(){
   if(s) playStation(s);
 });
 
-/* ================= CANAL OFICIAL DE AVISOS ================= */
+/* ================= CANAL OFICIAL DE AVISOS =================
+   Mensajes amarillos con ✕ (como la app): se cierran solo por sesión y
+   reaparecen al reabrir la página. Nada se guarda como «leído» en
+   localStorage; los cerrados en esta sesión viven solo en memoria. */
 var AVISOS_URLS=['./avisos.json','https://radiolatinapp.github.io/avisos.json'];
-var LS_AVISOS='rl_avisos', LS_LEIDOS='rl_avisos_leidos';
+var LS_AVISOS='rl_avisos', avisosCerrados={};
 function avisosLS(k,fb){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch(e){ return fb; } }
 function avisosSave(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function loadAvisos(){
@@ -332,40 +369,43 @@ function loadAvisos(){
 }
 function updateAvisosBadge(list){
   list=list||avisosLS(LS_AVISOS,[]);
-  var leidos=avisosLS(LS_LEIDOS,[]), n=0, i;
-  for(i=0;i<list.length;i++){ if(list[i]&&list[i].id&&leidos.indexOf(list[i].id)===-1) n++; }
+  var n=0, i;
+  for(i=0;i<list.length;i++){ if(list[i]&&list[i].id&&!avisosCerrados[list[i].id]) n++; }
   var b=el('badge-avisos'); if(!b) return;
   b.textContent=n>99?'99+':String(n); b.hidden=!(n>0);
 }
 function renderAvisos(list){
   var box=el('lista-avisos'); if(!box) return;
-  var leidos=avisosLS(LS_LEIDOS,[]);
   if(!list||!list.length){ box.innerHTML='<p class="avisos-vacio">No hay avisos por ahora. Vuelve pronto.</p>'; return; }
   box.innerHTML=list.map(function(a){
-    if(!a||!a.id) return '';
-    var leido=leidos.indexOf(a.id)!==-1, cta='';
+    if(!a||!a.id||avisosCerrados[a.id]) return '';
+    var cta='';
     if(a.accion&&a.accion.tipo){
       var t=String(a.accion.tipo).toLowerCase();
-      if(t==='pais') cta='<div class="aviso-cta">Ver emisoras →</div>';
-      else if(t==='emisora') cta='<div class="aviso-cta">Escuchar →</div>';
+      if(t==='pais') cta='<button type="button" class="aviso-cta" data-accion="pais">Ver emisoras →</button>';
+      else if(t==='emisora') cta='<button type="button" class="aviso-cta" data-accion="emisora">Escuchar →</button>';
     }
-    return '<article class="aviso-card'+(leido?' leido':'')+'" data-aviso="'+esc(a.id)+'" role="button" tabindex="0">'+
+    return '<article class="aviso-msg" data-aviso="'+esc(a.id)+'">'+
+      '<button type="button" class="aviso-close" data-cerrar="'+esc(a.id)+'" aria-label="Cerrar aviso">✕</button>'+
       (a.fecha?'<div class="aviso-fecha">'+esc(a.fecha)+'</div>':'')+
       '<h3 class="aviso-titulo">'+esc(a.titulo||'Aviso')+'</h3>'+
       (a.texto?'<p class="aviso-texto">'+esc(a.texto)+'</p>':'')+cta+'</article>';
   }).join('');
-  box.querySelectorAll('[data-aviso]').forEach(function(c){
-    function open(){ openAviso(c.getAttribute('data-aviso')); }
-    c.addEventListener('click',open);
-    c.addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); open(); } });
+  box.querySelectorAll('[data-cerrar]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var id=b.getAttribute('data-cerrar'); avisosCerrados[id]=1;
+      var card=b.closest('.aviso-msg'); if(card) card.style.display='none';
+      updateAvisosBadge();
+    });
   });
-}
-function openAviso(id){
-  var list=avisosLS(LS_AVISOS,[]), a=null, i;
-  for(i=0;i<list.length;i++){ if(list[i]&&list[i].id===id){ a=list[i]; break; } }
-  if(a){ var leidos=avisosLS(LS_LEIDOS,[]); if(leidos.indexOf(id)===-1){ leidos.push(id); avisosSave(LS_LEIDOS,leidos); } }
-  renderAvisos(list); updateAvisosBadge(list);
-  if(a&&a.accion) resolveAvisoAction(a.accion);
+  box.querySelectorAll('[data-accion]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var card=b.closest('.aviso-msg'), id=card?card.getAttribute('data-aviso'):'';
+      var list=avisosLS(LS_AVISOS,[]), a=null, i;
+      for(i=0;i<list.length;i++){ if(list[i]&&list[i].id===id){ a=list[i]; break; } }
+      if(a&&a.accion) resolveAvisoAction(a.accion);
+    });
+  });
 }
 function resolveAvisoAction(acc){
   try{
@@ -510,7 +550,12 @@ function ensureSignedIn(){
 }
 function rlChatProfile(){ return { nick:localStorage.getItem(NICK_KEY)||'', sexo:localStorage.getItem(SEXO_KEY)||'', pais:localStorage.getItem(PAIS_KEY)||'' }; }
 function rlNeedProfile(){ var p=rlChatProfile(); return !(p.nick&&p.sexo&&p.pais); }
-function rlDetectCountry(){ var l=(navigator.language||'es').split('-')[1]; return (l||'CO').toUpperCase(); }
+/* Países del catálogo (22): la bandera del chat solo vale si el código es
+   uno de estos; cualquier otro código (p. ej. GI, SZ, EE del idioma del
+   navegador) o un mensaje sin país muestra la bandera de Colombia. */
+var RL_CATALOGO_PAISES={AR:1,BO:1,BR:1,CL:1,CO:1,CR:1,CU:1,DO:1,EC:1,ES:1,GT:1,HN:1,MX:1,NI:1,PA:1,PE:1,PR:1,PY:1,SV:1,US:1,UY:1,VE:1};
+function rlChatFlag(p){ var c=String(p||'').toUpperCase(); if(!RL_CATALOGO_PAISES[c]) c='CO'; return flagImg(c); }
+function rlDetectCountry(){ var l=(navigator.language||'es').split('-')[1]; var c=(l||'CO').toUpperCase(); return RL_CATALOGO_PAISES[c]?c:'CO'; }
 function sexIcon(s){ return s==='F'?'♀':(s==='M'?'♂':''); }
 function rlTodayKey(){ var d=new Date(); return 'rl_chat_limite_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function rlMsgsToday(){ return parseInt(localStorage.getItem(rlTodayKey())||'0',10); }
@@ -537,7 +582,7 @@ function msgHTML(d, mine){
   var nick=data.apodo||data.nickname||'Oyente';
   var isOwn=nick===mine;
   var time=formatTime(data.createdAt);
-  var flag=data.pais?flagImg(String(data.pais))+' ':'';
+  var flag=rlChatFlag(data.pais)+' ';
   var sx=data.sexo?' '+sexIcon(String(data.sexo)):'';
   /* Susurro premium: solo autor y destinatario ven el texto real */
   var esSusurro=!!data.esSusurro, paraNick=data.susurroPara||'';
@@ -914,13 +959,16 @@ el('rcSend').addEventListener('click',function(){
   toast(amt>2.50?'Comprobante enviado: adjunta la captura en el correo y te activamos Premium por 12 meses':'Comprobante enviado: gracias por donar');
 });
 /* ---------- Barra de apoyo (2026-11-14) ----------
-   Sale UNA VEZ por apertura (al cargar), dura 10 s y se cierra sola (la
+   Sale UNA VEZ por sesión (al cargar), dura 10 s y se cierra sola (la
    barrita amarilla muestra lo que falta). La ✕ la quita antes; «Donar» la
    cierra y baja al bloque de donaciones del pie. Nada la vuelve a mostrar
-   mientras se usa la página (ni cambiar de sección ni volver a Inicio);
-   al recargar sale otra vez una vez: es DOM nuevo, sin memoria. */
+   mientras se usa la página (ni cambiar de sección ni volver a Inicio)
+   ni al recargar en la misma sesión (sessionStorage rl_support_seen). */
 (function(){
   var bar=el('supportBar'); if(!bar) return;
+  var seen=false; try{ seen=sessionStorage.getItem('rl_support_seen')==='1'; }catch(e){}
+  if(seen){ bar.hidden=true; return; }
+  try{ sessionStorage.setItem('rl_support_seen','1'); }catch(e){}
   var done=false, timer=null;
   function hide(){
     if(done) return; done=true;

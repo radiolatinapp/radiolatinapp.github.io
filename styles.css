@@ -131,6 +131,12 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .aviso-titulo{font-size:1.02rem;margin:5px 0 2px}
 .aviso-texto{color:var(--muted);font-size:.9rem;margin:6px 0 0}
 .aviso-cta{color:var(--brand2);font-weight:700;margin-top:10px;font-size:.9rem}
+/* Avisos como mensajes amarillos con ✕ (2026-11-14): se cierran por sesión
+   y reaparecen al reabrir; nada persistente. */
+.aviso-msg{position:relative;background:rgba(250,204,21,.13);border:1px solid rgba(250,204,21,.45);border-radius:16px;padding:16px 42px 16px 18px}
+.aviso-msg .aviso-cta{display:inline-block;background:none;border:0;padding:0;cursor:pointer}
+.aviso-close{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--muted);font-size:1.05rem;line-height:1;padding:4px 6px;cursor:pointer}
+.aviso-close:hover{color:var(--ink)}
 .avisos-vacio{color:var(--muted);text-align:center;padding:18px 10px}
 .count-badge{background:var(--brand);color:#040914;border-radius:999px;font-size:.75rem;font-weight:800;padding:3px 11px}
 
@@ -464,8 +470,9 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .station-art{background:linear-gradient(180deg,#fff,#eef0f5)!important;border-radius:18px;margin:10px 10px 0;aspect-ratio:4/3;box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.9);padding:12px}
 .station-art img{width:100%!important;height:100%!important}
 .genre-tag{position:absolute;top:16px;bottom:auto;left:16px;z-index:3}
-.station-info b{display:none}
-.station-info span{display:block;text-align:center;font-size:.92rem;font-weight:700;color:var(--ink);white-space:nowrap}
+.station-info b{display:block;text-align:center;font-size:.9rem;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.station-info span{display:block;text-align:center;font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.station-info .station-freq{display:block;text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.04em;color:var(--brand2)}
 .live-pill{display:block;text-align:center;margin-top:2px;line-height:1.4;background:none;padding:0;filter:drop-shadow(0 0 6px rgba(0,230,118,.8));animation:livePulse 2.4s ease-in-out infinite}
 @keyframes livePulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.12);opacity:1}}
 
