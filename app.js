@@ -861,12 +861,13 @@ el('linkCodeBtn').addEventListener('click',async function(){
 });
 
 /* ---------- donaciones: enviar comprobante (FIX 2026-11-14) ----------
-   Canal de envío: correo (mailto a rico.jeremy@outlook.com, el correo de
-   Zelle, donde llegan los avisos de donación). En el sitio NO hay número de
-   WhatsApp publicado, así que no se inventa ninguno: el reclamo se guarda
-   en este navegador (localStorage) y se envía por el correo que se abre ya
-   lleno; la captura se adjunta a mano en ese correo (un mailto no adjunta
-   archivos). Si donó más de US$ 2,50, el dueño lo activa Premium 12 meses. */
+   Canal de envío: correo (mailto a ricomoralesjeremy@gmail.com, el correo
+   del proyecto: a NINGÚN otro correo está autorizado que llegue el
+   comprobante). En el sitio NO hay número de WhatsApp publicado, así que
+   no se inventa ninguno: el reclamo se guarda en este navegador
+   (localStorage) y se envía por el correo que se abre ya lleno; la captura
+   se adjunta a mano en ese correo (un mailto no adjunta archivos). Si donó
+   más de US$ 2,50, el dueño lo activa Premium 12 meses. */
 var RC_LAST_BODY='';
 function rcBuildBody(){
   var m=el('rcMethod').value, amt=parseFloat(el('rcAmount').value)||0;
@@ -908,7 +909,7 @@ el('rcSend').addEventListener('click',function(){
     localStorage.setItem('rl_receipt_claims',JSON.stringify(list.slice(0,20)));
   }catch(e){}
   var sub='Comprobante de donación Radio Latina — '+el('rcMethod').value+' US$ '+amt.toFixed(2);
-  window.location.href='mailto:rico.jeremy@outlook.com?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
+  window.location.href='mailto:ricomoralesjeremy@gmail.com?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
   closeModal('receiptModal');
   toast(amt>2.50?'Comprobante enviado: adjunta la captura en el correo y te activamos Premium por 12 meses':'Comprobante enviado: gracias por donar');
 });
