@@ -913,6 +913,35 @@ el('rcSend').addEventListener('click',function(){
   closeModal('receiptModal');
   toast(amt>2.50?'Comprobante enviado: adjunta la captura en el correo y te activamos Premium por 12 meses':'Comprobante enviado: gracias por donar');
 });
+/* ---------- Barra de apoyo (2026-11-14) ----------
+   Sale UNA VEZ por apertura (al cargar), dura 10 s y se cierra sola (la
+   barrita amarilla muestra lo que falta). La ✕ la quita antes; «Donar» la
+   cierra y baja al bloque de donaciones del pie. Nada la vuelve a mostrar
+   mientras se usa la página (ni cambiar de sección ni volver a Inicio);
+   al recargar sale otra vez una vez: es DOM nuevo, sin memoria. */
+(function(){
+  var bar=el('supportBar'); if(!bar) return;
+  var done=false, timer=null;
+  function hide(){
+    if(done) return; done=true;
+    if(timer) clearTimeout(timer);
+    bar.classList.add('hide');
+    setTimeout(function(){ bar.hidden=true; },400);
+  }
+  timer=setTimeout(hide,10000);
+  var x=el('supportClose'); if(x) x.addEventListener('click',hide);
+  var d=el('supportDonate'); if(d) d.addEventListener('click',function(){
+    hide();
+    var f=el('donateFooter');
+    if(f){
+      setTimeout(function(){
+        f.scrollIntoView({behavior:'smooth',block:'start'});
+        f.classList.add('donate-flash');
+        setTimeout(function(){ f.classList.remove('donate-flash'); },1800);
+      },120);
+    }
+  });
+})();
 /* copiar correo de Zelle y número de Nequi */
 document.addEventListener('click',function(e){
   var b=e.target.closest?e.target.closest('[data-copy]'):null; if(!b) return;
@@ -961,6 +990,7 @@ async function initChat(){
 initCatalog();
 rlInitGlobe();
 rlInitSpaceFx();
+rlInitGlobeFx();
 /* tema guardado (el <head> ya lo aplicó para evitar flash; aquí se sincroniza el botón) */
 (function(){ var t='auto'; try{ t=localStorage.getItem(THEME_KEY)||'auto'; }catch(e){} applyTheme(t); })();
 /* temporizador: rearmar si sobrevivió una recarga */
@@ -1581,12 +1611,27 @@ function rlLoadScript(src){
     document.head.appendChild(s);
   });
 }
+/* Radio del disco terrestre en proyección globo: R = 512·2^zoom/(2π) px.
+   Verificado en local: zoom 0.2 → disco ~187 px; zoom -0.1 → ~152 px
+   (la Tierra pequeña del teléfono del dueño); zoom 0.6 → ~247 px, que
+   RECORTA el globo en un mapa chico (se ve un mapa plano, no un mundo).
+   El zoom automático pone el disco a ~87% del lado menor del mapa para
+   que la Tierra llene su cuadro con el limbo visible, en cualquier ancho. */
+function rlGlobeDiskZoom(){
+  var m=el('globeMap'), z=0.2;
+  if(m&&m.clientWidth>0&&m.clientHeight>0){
+    var side=Math.min(m.clientWidth,m.clientHeight);
+    z=Math.log(side*0.435*Math.PI*2/512)/Math.log(2);
+    z=Math.max(-0.8,Math.min(1.4,z));
+  }
+  return z;
+}
+
 function rlInitGlobe(){
   if(rlGlobeInitStarted) return; rlGlobeInitStarted=true;
   var wrap=el('globeWrap'); if(!wrap) return;
   function start(){
     if(!window.maplibregl){ rlGlobeFail(); return; }
-    var mobile=window.innerWidth<=760;
     var map;
     try{
       map=new maplibregl.Map({
@@ -1605,7 +1650,7 @@ function rlInitGlobe(){
           ]
         },
         center:[-70,10],
-        zoom:mobile?-0.1:0.2,
+        zoom:rlGlobeDiskZoom(),
         minZoom:-1,
         maxZoom:6,
         attributionControl:{compact:true},
@@ -1676,27 +1721,70 @@ function rlInitSpaceFx(){
   var reduced=false;
   try{ reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
   var W=0,H=0,inView=true,raf=null,last=0,shootAt=9000;
-  var stars=[],sats=[],planets=[],meteor=null;
+  var stars=[],sats=[],planets=[],meteor=null,patch={cx:0,cy:0,r:0};
   function isMob(){ return window.innerWidth<=760; }
   function rnd(a,b){ return a+Math.random()*(b-a); }
   function build(){
-    var mob=isMob(),i,n;
-    stars=[];
-    n=mob?18:46;
-    for(i=0;i<n;i++) stars.push({x:rnd(0,W),y:rnd(0,H),r:rnd(0.5,1.4),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.10,0.32)});
+    var mob=isMob(),i,n,wr=null;
     var wrap=el('globeWrap'),cx=W/2,cy=H/2,rx=W*0.42,ry=H*0.36;
     if(wrap){
-      var hr=hero.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+      var hr=hero.getBoundingClientRect();
+      wr=wrap.getBoundingClientRect();
       cx=wr.left-hr.left+wr.width/2; cy=wr.top-hr.top+wr.height/2;
       rx=Math.min(wr.width/2+64,W*0.48); ry=Math.min(wr.height/2+56,H*0.42);
     }
+    /* FIX 2026-11-14 — el universo se centra en el PANEL del globo, no en
+       el hero completo. Lo roto en móvil: el planeta iba a (W*0.88,H*0.05),
+       arriba a la derecha del hero alto, separadísimo del mundo; la órbita
+       del satélite era tan ancha (mitad del ancho + 64) que la tarjeta lo
+       tapaba casi siempre y solo asomaba un fragmento en el borde; las
+       estrellas, 18 en todo el hero y con alfa 0.10–0.32, no se veían.
+       Ahora, en móvil: órbita pegada al panel (+22 px), satélite más
+       grande, planeta orbitando el panel despacio y estrellas brillantes
+       concentradas alrededor del panel. */
+    if(mob){
+      rx=wr?Math.min(wr.width/2+22,W*0.48):W*0.42;
+      ry=wr?Math.min(wr.height/2+22,H*0.42):H*0.36;
+      /* Órbita dentro del lienzo: que el satélite y el planeta no se
+         recorten en los bordes del hero (en móvil el panel es a todo lo
+         ancho y la órbita se salía por arriba y por los lados). */
+      rx=Math.min(rx,Math.max(24,cx-22),Math.max(24,W-cx-22));
+      ry=Math.min(ry,Math.max(24,cy-22),Math.max(24,H-cy-22));
+      /* Estrellas SOLO donde se ven: en la franja de 110 px alrededor del
+         panel, fuera de su rectángulo (las que caían detrás de la tarjeta
+         eran invisibles). Con halo oscuro para que se vean también en
+         tema claro. */
+      stars=[];
+      var wTop=wr?Math.max(0,wr.top-hr.top):0, wBot=wTop+(wr?wr.height:0);
+      var wL=wr?Math.max(0,wr.left-hr.left):0, wR=wL+(wr?wr.width:0);
+      var tries=0;
+      while(stars.length<30&&tries<300){
+        tries++;
+        var sx2=rnd(4,W-4), sy2=rnd(Math.max(0,wTop-110),Math.min(H,wBot+110));
+        if(sx2>wL-6&&sx2<wR+6&&sy2>wTop-6&&sy2<wBot+6) continue;
+        stars.push({x:sx2,y:sy2,r:rnd(0.9,2.2),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.3,0.65)});
+      }
+    }else{
+      stars=[];
+      n=46;
+      for(i=0;i<n;i++) stars.push({x:rnd(0,W),y:rnd(0,H),r:rnd(0.5,1.4),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.10,0.32)});
+    }
+    /* Halo de cielo nocturno alrededor del panel: en tema claro las
+       estrellas blancas no se verían sobre el fondo claro; este halo las
+       hace visibles en los dos temas. Está detrás del contenido (el canvas
+       es z-index 0) y se desvanece a transparente, sin tapar nada. */
+    patch={cx:cx,cy:cy,r:Math.max(rx,ry)+60};
     sats=[
       {a:rnd(0,6.28),sp:0.055,rx:rx,ry:ry,cx:cx,cy:cy,wt:0,rings:[],col:'#00F2FE',sc:1},
       {a:rnd(0,6.28),sp:-0.042,rx:rx*0.86,ry:ry*0.86,cx:cx,cy:cy,wt:1.2,rings:[],col:'#FACC15',sc:0.85}
     ];
     if(mob) sats.length=1;
     planets=[];
-    if(mob) planets.push({kind:'ringed',x:W*0.88,y:H*0.05,r:15,vx:-1.0,vy:0.7,ph:rnd(0,6.28)});
+    if(mob){
+      var prx=Math.min(rx+48,Math.max(24,cx-26),Math.max(24,W-cx-26));
+      var pry=Math.min(ry+48,Math.max(24,cy-26),Math.max(24,H-cy-26));
+      planets.push({kind:'ringed',orb:true,a:rnd(0,6.28),sp:0.02,rx:prx,ry:pry,cx:cx,cy:cy,r:18,ph:rnd(0,6.28)});
+    }
     else{
       planets.push({kind:'ringed',x:W*0.07,y:H*0.86,r:30,vx:1.6,vy:-0.8,ph:rnd(0,6.28)});
       planets.push({kind:'rocky',x:W*0.96,y:H*0.10,r:20,vx:-1.4,vy:0.9,ph:rnd(0,6.28)});
@@ -1776,7 +1864,7 @@ function rlInitSpaceFx(){
     }
   }
   function drawSat(s,t,dt){
-    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc*(isMob()?0.8:1);
+    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc*(isMob()?1.2:1);
     s.wt-=dt;
     if(s.wt<=0){ s.wt=2.4; s.rings.push({r:8,a:0.55}); }
     for(var i=s.rings.length-1;i>=0;i--){
@@ -1810,19 +1898,31 @@ function rlInitSpaceFx(){
   function draw(t,dt){
     ctx.clearRect(0,0,W,H);
     var i;
+    if(patch&&patch.r>0){
+      var pg=ctx.createRadialGradient(patch.cx,patch.cy,0,patch.cx,patch.cy,patch.r);
+      pg.addColorStop(0,'rgba(2,6,18,0.6)'); pg.addColorStop(0.6,'rgba(2,6,18,0.3)'); pg.addColorStop(1,'rgba(2,6,18,0)');
+      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(patch.cx,patch.cy,patch.r,0,6.2832); ctx.fill();
+    }
+    var mobDraw=isMob();
     for(i=0;i<stars.length;i++){
       var st=stars[i], al=st.a*(0.6+0.4*Math.sin(t*0.001*st.s+st.p));
+      if(mobDraw) glow(st.x,st.y,st.r*4.5,'rgba(2,6,18,0.55)',0.7);
       ctx.globalAlpha=Math.max(0.05,al); ctx.fillStyle='#fff';
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill();
     }
     ctx.globalAlpha=1;
     for(i=0;i<planets.length;i++){
       var p=planets[i];
-      p.x+=p.vx*dt; p.y+=p.vy*dt;
-      if(p.x<W*0.06||p.x>W*0.94) p.vx*=-1;
-      if(p.y<H*0.08||p.y>H*0.92) p.vy*=-1;
-      p.x=Math.max(p.r+4,Math.min(W-p.r-4,p.x));
-      p.y=Math.max(p.r+4,Math.min(H-p.r-4,p.y));
+      if(p.orb){
+        p.a+=p.sp*dt;
+        p.x=p.cx+Math.cos(p.a)*p.rx; p.y=p.cy+Math.sin(p.a)*p.ry;
+      }else{
+        p.x+=p.vx*dt; p.y+=p.vy*dt;
+        if(p.x<W*0.06||p.x>W*0.94) p.vx*=-1;
+        if(p.y<H*0.08||p.y>H*0.92) p.vy*=-1;
+        p.x=Math.max(p.r+4,Math.min(W-p.r-4,p.x));
+        p.y=Math.max(p.r+4,Math.min(H-p.r-4,p.y));
+      }
       drawPlanet(p,t);
     }
     for(i=0;i<sats.length;i++){
@@ -1878,6 +1978,150 @@ function rlInitSpaceFx(){
   });
   if('ResizeObserver' in window){
     new ResizeObserver(function(){ resize(); if(!reduced) kick(); }).observe(hero);
+  }else{
+    window.addEventListener('resize',function(){ resize(); if(!reduced) kick(); });
+  }
+  kick();
+}
+
+/* ================= UNIVERSO ADENTRO DEL CUADRO DEL GLOBO =================
+   Canvas #globeFx DENTRO de #globeMap (recortado por su overflow:hidden y
+   su border-radius): estrellas, 1 satélite en órbita y 1 planetita en una
+   esquina, alrededor de la Tierra — NUNCA sobre ella. Todo se coloca fuera
+   del disco (radio 512·2^zoom/(2π), el mismo zoom automático del globo) y
+   el canvas va por DEBAJO de los controles de MapLibre (z-index 1) y con
+   pointer-events:none: no tapa ni bloquea la Tierra, sus puntos, la
+   pastilla, el marcador amarillo, la atribución ni ningún control. Se pausa
+   si la pestaña se oculta o el mapa sale de la vista; con «reducir
+   movimiento» queda una escena fija. */
+function rlInitGlobeFx(){
+  var cv=el('globeFx'); if(!cv) return;
+  var box=el('globeMap'); if(!box) return;
+  var ctx=cv.getContext('2d'); if(!ctx) return;
+  var reduced=false;
+  try{ reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var W=0,H=0,diskR=0,inView=true,raf=null,last=0;
+  var stars=[],sat=null,planet=null;
+  function isMob(){ return window.innerWidth<=760; }
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function build(){
+    var mob=isMob(),i,tries;
+    diskR=512*Math.pow(2,rlGlobeDiskZoom())/(2*Math.PI);
+    var cx=W/2, cy=H/2;
+    stars=[];
+    var n=mob?14:26;
+    for(i=0,tries=0;i<n&&tries<500;tries++){
+      var x=rnd(4,W-4), y=rnd(4,H-4);
+      var dx=x-cx, dy=y-cy;
+      if(Math.sqrt(dx*dx+dy*dy)<diskR+10) continue;
+      if(x>W-150&&y>H-44) continue; /* hueco para la atribución */
+      stars.push({x:x,y:y,r:rnd(0.7,1.6),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.3,0.7)});
+      i++;
+    }
+    var orbitR=Math.max(20,Math.min(diskR+16,Math.min(W,H)/2-6));
+    sat={a:rnd(0,6.28),sp:0.05,rx:orbitR,ry:orbitR*0.92,cx:cx,cy:cy,wt:0,rings:[],col:'#00F2FE',sc:mob?0.55:0.7};
+    planet=null;
+    var pr=mob?9:13, px0=26, py0=26;
+    var pdx=px0-cx, pdy=py0-cy;
+    if(Math.sqrt(pdx*pdx+pdy*pdy)>diskR+pr+8) planet={kind:'ringed',x:px0,y:py0,r:pr,ph:rnd(0,6.28)};
+  }
+  function resize(){
+    var dpr=Math.min(window.devicePixelRatio||1,1.75);
+    W=box.clientWidth; H=box.clientHeight;
+    if(!W||!H) return;
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    build();
+    if(reduced) draw(1000,0);
+  }
+  function glow(x,y,r,color,a){
+    var g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,color); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=a; ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill(); ctx.globalAlpha=1;
+  }
+  function drawPlanet(p,t){
+    var x=p.x,y=p.y,r=p.r;
+    glow(x,y,r*2.2,'rgba(250,204,21,0.10)',0.5);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(-0.32);
+    ctx.strokeStyle='rgba(214,186,138,0.55)'; ctx.lineWidth=r*0.28;
+    ctx.beginPath(); ctx.ellipse(0,0,r*1.9,r*0.55,0,0,6.2832); ctx.stroke();
+    ctx.restore();
+    var g=ctx.createRadialGradient(x-r*0.35,y-r*0.4,r*0.1,x,y,r);
+    g.addColorStop(0,'#f3e6c8'); g.addColorStop(0.45,'#d9b878'); g.addColorStop(0.8,'#a67c3d'); g.addColorStop(1,'#6b4d24');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+    ctx.save(); ctx.translate(x,y); ctx.rotate(-0.32);
+    ctx.strokeStyle='rgba(226,198,150,0.75)'; ctx.lineWidth=r*0.28;
+    ctx.beginPath(); ctx.ellipse(0,0,r*1.9,r*0.55,0,0,Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  function drawSat(s,t,dt){
+    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc;
+    s.wt-=dt;
+    if(s.wt<=0){ s.wt=2.4; s.rings.push({r:6,a:0.55}); }
+    for(var i=s.rings.length-1;i>=0;i--){
+      var rg=s.rings[i]; rg.r+=20*dt; rg.a-=0.30*dt;
+      if(rg.a<=0||rg.r>60){ s.rings.splice(i,1); continue; }
+      ctx.globalAlpha=rg.a*0.30; ctx.strokeStyle=s.col; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.arc(x,y,rg.r,0,6.2832); ctx.stroke();
+      ctx.globalAlpha=rg.a; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(x,y,rg.r,0,6.2832); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(s.a)*0.25); ctx.scale(sc,sc);
+    ctx.fillStyle='#1e40af';
+    ctx.fillRect(-17,-3,10,6); ctx.fillRect(7,-3,10,6);
+    ctx.strokeStyle='rgba(147,197,253,0.7)'; ctx.lineWidth=0.6;
+    ctx.strokeRect(-17,-3,10,6); ctx.strokeRect(7,-3,10,6);
+    ctx.fillStyle='#d4a017'; ctx.fillRect(-7,-4.5,14,9);
+    ctx.fillStyle='#facc15'; ctx.fillRect(-7,-4.5,14,2);
+    ctx.fillStyle='#cbd5e1'; ctx.fillRect(7,-3,5,6);
+    ctx.strokeStyle='#e5e7eb'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(-9,-6,5,Math.PI*0.9,Math.PI*1.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-9,-1); ctx.lineTo(-7,-4.5); ctx.stroke();
+    if(Math.sin(t*0.006)>0){ ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.arc(0,-6.5,1.8,0,6.2832); ctx.fill(); }
+    ctx.fillStyle='#22c55e'; ctx.beginPath(); ctx.arc(17,0,1.2,0,6.2832); ctx.fill();
+    ctx.restore();
+  }
+  function draw(t,dt){
+    ctx.clearRect(0,0,W,H);
+    var i;
+    for(i=0;i<stars.length;i++){
+      var st=stars[i], al=st.a*(0.6+0.4*Math.sin(t*0.001*st.s+st.p));
+      ctx.globalAlpha=Math.max(0.05,al); ctx.fillStyle='#fff';
+      ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,6.2832); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    if(planet) drawPlanet(planet,t);
+    if(sat){ sat.a+=sat.sp*dt; drawSat(sat,t,dt); }
+  }
+  function frame(ts){
+    raf=null;
+    if(!inView||document.hidden) return;
+    var dt=Math.min(0.05,((ts-last)/1000)||0.016); last=ts;
+    draw(ts,dt);
+    raf=requestAnimationFrame(frame);
+  }
+  function kick(){
+    if(reduced||!inView||document.hidden||raf) return;
+    last=(window.performance&&performance.now)?performance.now():0;
+    raf=requestAnimationFrame(frame);
+  }
+  resize();
+  if(reduced){ draw(1000,0); return; }
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        inView=en.isIntersecting;
+        if(inView) kick();
+      });
+    }).observe(box);
+  }
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) kick();
+  });
+  if('ResizeObserver' in window){
+    new ResizeObserver(function(){ resize(); if(!reduced) kick(); }).observe(box);
   }else{
     window.addEventListener('resize',function(){ resize(); if(!reduced) kick(); });
   }

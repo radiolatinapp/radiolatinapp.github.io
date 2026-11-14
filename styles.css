@@ -228,6 +228,46 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .zelle-qr{width:150px;max-width:70%;height:auto;border-radius:12px;background:#fff;padding:6px}
 .donate-number{font-size:1.15rem;font-weight:800;letter-spacing:1px}
 .donate-card .tiny{margin-top:10px}
+/* --- Donaciones en el pie (FIX 2026-11-14) ---
+   PayPal, Zelle y Nequi JUNTOS, visibles desde la página principal: antes
+   solo se veía PayPal en el pie y Zelle/Nequi vivían en Info, por eso el
+   dueño no los veía. La tarjeta de Info se quitó; el bloque vive aquí. */
+.footer-donate{flex:1 1 100%;margin:0 0 14px;padding:20px 18px;border-radius:20px;text-align:center}
+.footer-donate h3{margin:0 0 8px;font-size:1.15rem}
+.footer-donate p{margin:0 auto 4px;max-width:640px}
+.footer-donate .donate-methods{margin:16px 0}
+.footer-donate .tiny{margin-top:10px}
+.donate-flash{animation:donateFlash 1.8s ease}
+@keyframes donateFlash{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,0)}25%{box-shadow:0 0 0 4px rgba(250,204,21,.55),0 0 24px rgba(250,204,21,.35)}}
+@media (max-width:760px){
+  .footer-donate .donate-methods{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .footer-donate .donate-method{padding:10px 6px;gap:6px}
+  .footer-donate .donate-method b{font-size:.82rem}
+  .footer-donate .donate-only{display:block;margin:4px auto 0;font-size:.62rem;padding:2px 6px;white-space:normal}
+  .footer-donate .zelle-qr{width:84px}
+  .footer-donate .donate-number{font-size:.9rem}
+  .footer-donate .donate-method span{font-size:.78rem;overflow-wrap:anywhere}
+  .footer-donate .btn-sm{padding:7px 8px;font-size:.78rem}
+}
+/* --- Barra de apoyo (2026-11-14) ---
+   Sale UNA VEZ por apertura (al cargar), dura 10 s y se cierra sola: la
+   barrita amarilla de abajo muestra lo que falta. La ✕ la quita antes y
+   «Donar» la cierra y baja al bloque de donaciones del pie. No vuelve a
+   salir mientras se usa la página (nada la vuelve a mostrar en la sesión);
+   al recargar sale otra vez una vez. Va en el flujo, arriba del todo: no
+   tapa el globo ni los botones, solo empuja el contenido unos segundos. */
+.support-bar{position:relative;display:flex;align-items:center;gap:10px;background:#040914;border-bottom:1px solid rgba(250,204,21,.4);color:#f8fafc;padding:10px 14px;font-size:.88rem;overflow:hidden;max-height:120px;transition:max-height .35s ease,opacity .25s ease,padding .35s ease}
+.support-bar.hide{max-height:0;opacity:0;padding-top:0;padding-bottom:0;border-bottom-width:0}
+.support-icon{flex:none;color:#FACC15;display:inline-flex}
+.support-text{flex:1 1 auto;margin:0;line-height:1.35}
+.support-bar .btn{flex:none}
+.support-close{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(248,250,252,.35);background:transparent;color:#f8fafc;cursor:pointer}
+.support-close:hover{border-color:#FACC15;color:#FACC15}
+.support-progress{position:absolute;left:0;bottom:0;height:3px;width:100%;background:#FACC15;animation:supportProgress 10s linear forwards}
+@keyframes supportProgress{from{width:100%}to{width:0}}
+@media (max-width:560px){
+  .support-bar{font-size:.82rem;padding:9px 10px;gap:8px}
+}
 .info-card p,.info-card li{color:#d9d5e2;font-size:.93rem}
 .check-list{list-style:none;display:flex;flex-direction:column;gap:9px}
 .check-list li{padding-left:30px;position:relative}
@@ -507,14 +547,32 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .feature-card h3{font-size:1.05rem;margin-bottom:6px}
 .feature-card p{color:var(--text-secondary);font-size:.92rem}
 
-/* ===== Hero móvil: una columna ===== */
+/* ===== Hero móvil: dos columnas, globo AL LADO del texto =====
+   FIX 2026-11-14 — el globo bajaba debajo de todo el texto y quedaba un
+   rectángulo grande vacío con la Tierra pequeña. Ahora el hero sigue en
+   dos columnas en móvil (texto a la izquierda, globo a la derecha) y el
+   mapa es cuadrado (aspect-ratio 1/1) para que la Tierra llene su cuadro
+   sin espacio muerto. */
 @media (max-width:760px){
-  .hero{grid-template-columns:minmax(0,1fr);text-align:center;gap:28px;padding-top:36px}
-  .hero-copy{align-items:center;text-align:center}
-  .hero-title,.hero-sub{text-align:center}
-  .hero .hero-search{margin:0 auto 18px}
-  .hero .hero-ctas,.hero .hero-stats{justify-content:center}
-  .hero .waves{justify-content:center}
+  .hero{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:16px;align-items:center;text-align:left;padding:36px 12px 30px}
+  .hero-copy{align-items:flex-start;text-align:left}
+  .hero-title{font-size:clamp(1.7rem,7vw,2.3rem);text-align:left}
+  .hero-sub{font-size:.95rem;text-align:left}
+  .hero-copy .hero-logo{width:56px;height:56px;margin:0 0 12px}
+  .hero .hero-search{margin:0 0 16px;flex-wrap:wrap}
+  .hero .hero-search input{min-width:110px}
+  .hero .hero-search .btn{flex:1 1 100%}
+  .hero .hero-ctas{justify-content:flex-start;margin-bottom:20px}
+  .hero .hero-ctas .btn{padding:12px 16px;font-size:.95rem;white-space:nowrap}
+  .hero .hero-stats{justify-content:flex-start;gap:8px}
+  .hero .hero-stats .stat{padding:10px 14px}
+  .hero .hero-stats .stat b{font-size:1.2rem}
+  .hero .waves{justify-content:flex-start;gap:3px}
+  .hero .waves span{width:5px}
+  .globe-wrap{padding:10px}
+  .globe-map{height:auto;aspect-ratio:1/1}
+  .globe-map .maplibregl-ctrl-attrib{white-space:nowrap;font-size:9px}
+  .globe-caption{font-size:.78rem}
 }
 
 /* ===== GLOBO EN VIVO + REORGANIZACIÓN (2026-11-14) =====
@@ -536,7 +594,12 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
    tarjeta del globo y del texto, sin tapar nada. */
 .space-fx{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .hero-copy,.globe-wrap{position:relative;z-index:1}
-.globe-map{width:100%;height:520px;border-radius:18px;overflow:hidden;background:#040914}
+.globe-map{position:relative;width:100%;height:520px;border-radius:18px;overflow:hidden;background:#040914}
+/* Universo ADENTRO del cuadro del globo (canvas #globeFx): recortado por el
+   overflow:hidden y el border-radius del mapa, por debajo de los controles
+   de MapLibre y con pointer-events:none: jamás tapa ni bloquea la Tierra,
+   sus puntos, la pastilla, el marcador ni la atribución. */
+.globe-fx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 .globe-map .maplibregl-canvas{outline:none}
 .globe-map .maplibregl-ctrl-attrib{background:rgba(4,9,20,.55);color:rgba(248,250,252,.75);font-size:10px;border-radius:8px 0 0 0}
 .globe-map .maplibregl-ctrl-attrib a{color:rgba(248,250,252,.9)}
@@ -562,22 +625,53 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .mobile-nav[hidden]{display:none}
   .mobile-nav .navlink{display:flex;width:100%;text-align:left;padding:12px 14px;font-size:1rem}
   .mobile-nav .btn{width:100%;margin-top:6px}
-  /* Hero: una columna, globo grande y centrado */
-  .hero{grid-template-columns:minmax(0,1fr);text-align:center;gap:28px;padding:36px 12px 30px}
-  .hero-copy{align-items:center;text-align:center}
-  .hero-title,.hero-sub{text-align:center}
-  .hero .hero-search{margin:0 auto 18px}
-  .hero .hero-ctas,.hero .hero-stats{justify-content:center}
-  .hero .waves{justify-content:center}
-  .globe-map{height:380px}
+  /* Hero: dos columnas también en móvil, globo al lado del texto
+     (mismo arreglo que el bloque anterior; este manda por ir después) */
+  .hero{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:16px;align-items:center;text-align:left;padding:36px 12px 30px}
+  .hero-copy{align-items:flex-start;text-align:left}
+  .hero-title{font-size:clamp(1.7rem,7vw,2.3rem);text-align:left}
+  .hero-sub{font-size:.95rem;text-align:left}
+  .hero-copy .hero-logo{width:56px;height:56px;margin:0 0 12px}
+  .hero .hero-search{margin:0 0 16px;flex-wrap:wrap}
+  .hero .hero-search input{min-width:110px}
+  .hero .hero-search .btn{flex:1 1 100%}
+  .hero .hero-ctas{justify-content:flex-start;margin-bottom:20px}
+  .hero .hero-ctas .btn{padding:12px 16px;font-size:.95rem;white-space:nowrap}
+  .hero .hero-stats{justify-content:flex-start;gap:8px}
+  .hero .hero-stats .stat{padding:10px 14px}
+  .hero .hero-stats .stat b{font-size:1.2rem}
+  .hero .waves{justify-content:flex-start;gap:3px}
+  .hero .waves span{width:5px}
+  .globe-wrap{padding:10px}
+  .globe-map{height:auto;aspect-ratio:1/1}
+  .globe-map .maplibregl-ctrl-attrib{white-space:nowrap;font-size:9px}
+  .globe-caption{font-size:.78rem}
   /* El pie queda libre del reproductor fijo: se alcanza Donar y las legales */
   body{padding-bottom:210px}
+}
+
+/* ===== Hero angosto (≤480px): el globo ARRIBA, grande, nunca debajo =====
+   FIX 2026-11-14 — a 390 px dos columnas dejan el mapa en 127 px: la Tierra
+   queda diminuta, la píldora de atribución la tapa y no cabe el universo.
+   Aquí el globo va primero (order:-1), a todo el ancho y cuadrado, con el
+   texto debajo centrado. NUNCA debajo del texto completo. */
+@media (max-width:480px){
+  .hero{grid-template-columns:minmax(0,1fr);gap:22px;text-align:center;padding:28px 12px 30px}
+  .globe-wrap{order:-1}
+  .hero-copy{align-items:center;text-align:center}
+  .hero-title{font-size:clamp(2rem,8vw,2.6rem);text-align:center}
+  .hero-sub{text-align:center}
+  .hero-copy .hero-logo{margin:0 auto 12px}
+  .hero .hero-search{margin:0 auto 16px;flex-wrap:nowrap}
+  .hero .hero-search .btn{flex:0 1 auto}
+  .hero .hero-ctas,.hero .hero-stats{justify-content:center}
+  .hero .waves{justify-content:center}
 }
 
 /* --- Barra superior: la hamburguesa aparece desde 1024px ---
    FIX 2026-11-14: a 886px la barra con los 7 enlaces + Descargar app medía
    915px y la página desbordaba 29px; con el menú hamburguesa desde 1024px
-   la barra ya no se aprieta. El hero sigue en dos columnas hasta 760px. */
+   la barra ya no se aprieta. El hero sigue en dos columnas también por debajo de 760px. */
 @media (max-width:1024px){
   .topnav{display:none}
   .topbar>.btn{display:none}
@@ -587,6 +681,10 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .mobile-nav[hidden]{display:none}
   .mobile-nav .navlink{display:flex;width:100%;text-align:left;padding:12px 14px;font-size:1rem}
   .mobile-nav .btn{width:100%;margin-top:6px}
+  /* El mapa es cuadrado hasta 1024px: con altura fija de 520 la Tierra
+     quedaba chica en un cuadro alto y vacío (a 886 px el disco era 190 px
+     en un mapa de 360×521). */
+  .globe-map{height:auto;aspect-ratio:1/1}
 }
 
 /* --- Pie: que nada se corte en pantallas angostas --- */
