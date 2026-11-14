@@ -1171,7 +1171,10 @@ renderHistoryRow();
     });
   }
 
-})();
+/* FIX 2026-11-14 — el IIFE principal NO se cerraba aquí: el cierre prematuro
+   dejaba fuera del ámbito a la sala, el globo y el menú (el/STATIONS/db no
+   existían ahí) y el ReferenceError en rlInitGlobe abortaba todo app.js.
+   El cierre se movió al final del archivo. */
 
 (function(){
   var a=document.getElementById('navAgrega');
@@ -1613,4 +1616,11 @@ function rlInitGlobe(){
     if(!nav.hidden&&!nav.contains(e.target)&&e.target!==btn&&!btn.contains(e.target)) close();
   });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+
+/* FIX 2026-11-14 — cierre del IIFE principal (abierto en la línea 6).
+   Estaba en la línea 1174 y dejaba fuera del ámbito a la sala de emisora,
+   el globo 3D y el menú móvil: el/STATIONS/db no existían ahí, rlInitGlobe
+   lanzaba «el is not defined» y abortaba todo app.js (globo negro, menú
+   muerto, resto del script sin ejecutar). */
 })();
