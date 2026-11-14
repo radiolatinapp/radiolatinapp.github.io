@@ -1,5 +1,5 @@
 /* Radio Latina · Portal web (Fase 2: diseño elaborado + datos reales en vivo)
- * Reproductor con 2123 emisoras + chat Firebase (mismo modelo que la app 1.9.19).
+ * Reproductor con 2123 emisoras (stations.json) + chat Firebase (mismo modelo que la app).
  * Regla de Jeremy: en salas privadas, SOLO premium puede ENVIAR
  * (doc premium_uids/{uid} en Firestore); los gratis leen y ven el aviso.
  */
@@ -11,22 +11,27 @@ function el(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c];}); }
 var toastTimer=null;
 function toast(msg){ var t=el('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},3200); }
-function flagEmoji(cc){ try{ return String(cc).replace(/./g,function(ch){ return String.fromCodePoint(127397+ch.charCodeAt(0)); }); }catch(e){ return ''; } }
+function flagImg(cc, name){ cc=String(cc||'').toLowerCase(); if(!cc) return ''; return '<img class="flag" src="assets/flags/'+cc+'.svg" alt="'+esc(name||cc.toUpperCase())+'" loading="lazy" onerror="this.remove()">'; }
+var SVG_LOCK='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+var SVG_CROWN='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg>';
+var SVG_GLOBE='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>';
+var SVG_MOON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+var SVG_SUN='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 
 /* ---------- degradados por género ---------- */
 var GENRE_GRADS=[
-  [/tropical/, 'linear-gradient(135deg,#f59e0b,#E11D48)'],
-  [/salsa/, 'linear-gradient(135deg,#fb923c,#E11D48)'],
+  [/tropical/, 'linear-gradient(135deg,#F59E0B,#B45309)'],
+  [/salsa/, 'linear-gradient(135deg,#FB923C,#B45309)'],
   [/noticia|news/, 'linear-gradient(135deg,#3b82f6,#1e40af)'],
-  [/romántica|romantica/, 'linear-gradient(135deg,#E11D48,#fb7185)'],
+  [/romántica|romantica/, 'linear-gradient(135deg,#F59E0B,#FACC15)'],
   [/pop/, 'linear-gradient(135deg,#22d3ee,#8b5cf6)'],
   [/rock/, 'linear-gradient(135deg,#8b5cf6,#312e81)'],
   [/regional/, 'linear-gradient(135deg,#22c55e,#15803d)'],
   [/variada|general/, 'linear-gradient(135deg,#14b8a6,#0ea5e9)'],
   [/80/, 'linear-gradient(135deg,#e879f9,#7c3aed)'],
-  [/urbana|reggaet/, 'linear-gradient(135deg,#f43f5e,#7c2d12)']
+  [/urbana|reggaet/, 'linear-gradient(135deg,#FACC15,#92400E)']
 ];
-function genreGrad(g){ g=String(g||'').toLowerCase(); for(var i=0;i<GENRE_GRADS.length;i++){ if(GENRE_GRADS[i][0].test(g)) return GENRE_GRADS[i][1]; } return 'linear-gradient(135deg,#E11D48,#7c2d12)'; }
+function genreGrad(g){ g=String(g||'').toLowerCase(); for(var i=0;i<GENRE_GRADS.length;i++){ if(GENRE_GRADS[i][0].test(g)) return GENRE_GRADS[i][1]; } return 'linear-gradient(135deg,#FACC15,#92400E)'; }
 function initials(n){ var stop=new Set(['radio','fm','am','stereo','estereo','la','el','de','del','los','las','y','en']); var w=String(n||'?').trim().split(/\s+/).filter(function(p){ return p&&!stop.has(p.toLowerCase()); }); var b=w.length?w:String(n||'?').trim().split(/\s+/).filter(Boolean); return (b.length>=2?(b[0][0]+b[1][0]):b[0].slice(0,2)).toUpperCase(); }
 
 /* ---------- estado ---------- */
@@ -224,7 +229,7 @@ function applyTheme(id){
   if(id==='auto'){ eff=(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark'; }
   if(eff==='light') document.documentElement.setAttribute('data-theme','light');
   else document.documentElement.removeAttribute('data-theme');
-  var b=el('themeBtn'); if(b) b.textContent=(eff==='light')?'☀️':'🌙';
+  var b=el('themeBtn'); if(b) b.innerHTML=(eff==='light')?SVG_SUN:SVG_MOON;
 }
 el('themeBtn').addEventListener('click',function(){
   var isLight=document.documentElement.getAttribute('data-theme')==='light';
@@ -380,6 +385,24 @@ function resolveAvisoAction(acc){
   }catch(e){ /* cero botones muertos */ }
 }
 
+
+
+/* ---------- cobertura por país (sección Inicio) ---------- */
+function buildCoverage(){
+  var grid=el('coverageGrid'); if(!grid||!STATIONS.length) return;
+  var by={};
+  STATIONS.forEach(function(s){ if(!s.country) return; (by[s.country]=by[s.country]||[]).push(s); });
+  var names=Object.keys(by).sort();
+  grid.innerHTML=names.map(function(c){
+    var list=by[c];
+    var ex=list.slice(0,3).map(function(x){ return '<b>'+esc(x.name)+'</b>'; }).join(' · ');
+    return '<button class="coverage-card" data-country="'+esc(c)+'"><span class="coverage-head">'+flagImg(countryCode(c), c)+'<span class="coverage-country">'+esc(c)+'</span><span class="coverage-count">'+list.length+' emisoras</span></span><span class="coverage-examples">'+ex+'</span></button>';
+  }).join('');
+  grid.querySelectorAll('.coverage-card').forEach(function(card){
+    card.addEventListener('click',function(){ selectCountry(card.getAttribute('data-country')); go('radio'); });
+  });
+}
+
 /* ---------- carga del catálogo ---------- */
 function initCatalog(){
   fetch('stations.json').then(function(r){ return r.json(); }).then(function(d){
@@ -387,10 +410,11 @@ function initCatalog(){
     el('statStations').textContent=STATIONS.length.toLocaleString('es-CO');
     var countries={}; d.forEach(function(s){ if(s.country) countries[s.country]=1; });
     var clist=Object.keys(countries).sort();
-    el('statCountries').textContent=clist.length+'+';
+    el('statCountries').textContent=clist.length;
     var cc=el('countryChips');
-    cc.innerHTML='<button class="chip active" data-c="">🌎 Todas</button>'+clist.map(function(c){return '<button class="chip" data-c="'+esc(c)+'">'+esc(flagEmoji(countryCode(c)))+' '+esc(c)+'</button>';}).join('');
+    cc.innerHTML='<button class="chip active" data-c="">'+SVG_GLOBE+' Todas</button>'+clist.map(function(c){return '<button class="chip" data-c="'+esc(c)+'">'+flagImg(countryCode(c), c)+' '+esc(c)+'</button>';}).join('');
     cc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ selectCountry(ch.getAttribute('data-c')); }); });
+    buildCoverage();
     var genres={}; d.forEach(function(s){ var g=String(s.genre||'').toLowerCase(); if(g) genres[g]=s.genre; });
     var fg=el('fGenre');
     Object.keys(genres).sort().forEach(function(g){ var o=document.createElement('option'); o.value=g; o.textContent=genres[g]; fg.appendChild(o); });
@@ -511,7 +535,7 @@ function msgHTML(d, mine){
   var nick=data.apodo||data.nickname||'Oyente';
   var isOwn=nick===mine;
   var time=formatTime(data.createdAt);
-  var flag=data.pais?flagEmoji(String(data.pais))+' ':'';
+  var flag=data.pais?flagImg(String(data.pais))+' ':'';
   var sx=data.sexo?' '+sexIcon(String(data.sexo)):'';
   /* Susurro premium: solo autor y destinatario ven el texto real */
   var esSusurro=!!data.esSusurro, paraNick=data.susurroPara||'';
@@ -623,7 +647,7 @@ el('chatMessages').addEventListener('click',async function(e){
 function openInviteModal(){
   var list=myRooms(), box=el('inviteRooms');
   box.innerHTML=list.length?list.map(function(r){
-    return '<button class="room-item" data-icode="'+esc(r.code)+'"><span class="ric">🔒</span><span><span class="room-item-name">'+esc(r.nombre)+'</span><span class="room-item-code">CÓDIGO '+esc(r.code)+'</span></span><span class="linklike">Copiar</span></button>';
+    return '<button class="room-item" data-icode="'+esc(r.code)+'"><span class="ric">'+SVG_LOCK+'</span><span><span class="room-item-name">'+esc(r.nombre)+'</span><span class="room-item-code">CÓDIGO '+esc(r.code)+'</span></span><span class="linklike">Copiar</span></button>';
   }).join(''):'<div class="chat-empty">Aún no tienes salas privadas. Crea una en la pestaña "Salas privadas". 🔑</div>';
   box.querySelectorAll('[data-icode]').forEach(function(b){ b.addEventListener('click',function(){
     var code=b.getAttribute('data-icode');
@@ -642,7 +666,7 @@ function forgetMyRoom(code){ try{localStorage.setItem(MY_ROOMS_KEY,JSON.stringif
 function renderMyRooms(){
   var box=el('myRooms'), list=myRooms();
   box.innerHTML=list.length?list.map(function(r){
-    return '<button class="room-item" data-room="'+esc(r.code)+'" data-rname="'+esc(r.nombre)+'"><span class="ric">🔒</span><span><span class="room-item-name">'+esc(r.nombre)+'</span><span class="room-item-code">CÓDIGO '+esc(r.code)+'</span></span></button>';
+    return '<button class="room-item" data-room="'+esc(r.code)+'" data-rname="'+esc(r.nombre)+'"><span class="ric">'+SVG_LOCK+'</span><span><span class="room-item-name">'+esc(r.nombre)+'</span><span class="room-item-code">CÓDIGO '+esc(r.code)+'</span></span></button>';
   }).join(''):'<div class="chat-empty">Aún no tienes salas privadas. Crea una o únete con un código. 🔑</div>';
   box.querySelectorAll('.room-item').forEach(function(b){ b.addEventListener('click',function(){ openRoom(b.getAttribute('data-room'),b.getAttribute('data-rname')); }); });
 }
@@ -792,7 +816,7 @@ function openProfile(){
   var p=rlChatProfile();
   el('pfNick').value=p.nick; el('pfSexo').value=p.sexo||'X';
   var sel=el('pfPais');
-  if(!sel.options.length){ PAISES.forEach(function(pc){ var o=document.createElement('option'); o.value=pc[0]; o.textContent=flagEmoji(pc[0])+' '+pc[1]; sel.appendChild(o); }); }
+  if(!sel.options.length){ PAISES.forEach(function(pc){ var o=document.createElement('option'); o.value=pc[0]; o.textContent=pc[0]+' · '+pc[1]; sel.appendChild(o); }); }
   sel.value=p.pais||rlDetectCountry();
   openModal('profileModal');
 }
@@ -1194,7 +1218,7 @@ renderHistoryRow();
     document.body.classList.add('rl-premium');
     if(!document.getElementById('rlPremiumBadge')){
       var brand=document.querySelector('.topbar .brand');
-      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">👑 PREMIUM</span>');
+      if(brand) brand.insertAdjacentHTML('afterend','<span id="rlPremiumBadge" class="rl-premium-badge">'+SVG_CROWN+' PREMIUM</span>');
     }
   }
   function premiumWelcome(){

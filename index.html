@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261010a">
+<link rel="stylesheet" href="styles.css?v=20261114a">
 <link rel="icon" type="image/png" href="assets/logos/d1-logo-512.png">
 <link rel="apple-touch-icon" href="assets/logos/d1-logo-512.png">
 <script>try{var _t=localStorage.getItem('rl_theme');if(_t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(_t!=='dark'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.setAttribute('data-theme','light');}}catch(_e){}</script>
@@ -32,13 +32,13 @@
   <nav class="topnav">
     <button data-nav="inicio" class="navlink active">Inicio</button>
     <button data-nav="radio" class="navlink">Radio en vivo</button>
-    <button data-nav="podcasts" class="navlink">🎙️ Podcasts</button>
+    <button data-nav="podcasts" class="navlink"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>Podcasts</button>
     <button data-nav="chat" class="navlink">Chat</button>
     <button data-nav="info" class="navlink">Info</button>
-    <a href="#agrega-emisora" class="navlink" id="navAgrega">➕ Agrega tu emisora</a>
-    <a href="#agrega-podcast" class="navlink" id="navAgregaPod">🎙️ Agrega tu podcast</a>
+    <a href="#agrega-emisora" class="navlink" id="navAgrega"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agrega tu emisora</a>
+    <a href="#agrega-podcast" class="navlink" id="navAgregaPod"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>Agrega tu podcast</a>
   </nav>
-  <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema" title="Día / noche">🌙</button>
+  <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema" title="Día / noche"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
   <a class="btn btn-primary btn-sm" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar app</a>
 </header>
 
@@ -46,11 +46,10 @@
   <!-- ============ INICIO ============ -->
   <section id="sec-inicio" class="page active">
     <div class="hero">
+      <div class="hero-copy">
       <img class="hero-logo" src="assets/logos/d1-logo-512.png" alt="Radio Latina">
-      <div class="waves" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-      </div>
-      <p class="hero-kicker">📻 Radio en vivo · 100% latina</p>
+      <span class="hero-tag">2.123 emisoras en vivo · 22 países</span>
+      <p class="hero-kicker">Radio en vivo · 100% latina</p>
       <h1 class="hero-title">Tu país<br><span class="grad-text">donde estés</span></h1>
       <p class="hero-sub">Miles de emisoras de toda Latinoamérica y el mundo hispano, sonando en vivo. Sin cuentas, sin vueltas: dale play y siente casa.</p>
       <div class="hero-search glass">
@@ -60,13 +59,21 @@
       </div>
       <div class="hero-ctas">
         <button class="btn btn-primary btn-lg" data-nav="radio">▶ Escuchar ahora</button>
-        <button class="btn btn-ghost btn-lg" data-nav="chat">💬 Unirme al chat</button>
+        <button class="btn btn-secondary btn-lg" data-nav="chat"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>Unirme al chat</button>
       </div>
       <div class="hero-stats">
-        <div class="stat"><b id="statStations">2115</b><span>emisoras</span></div>
-        <div class="stat"><b id="statCountries">20+</b><span>países</span></div>
+        <div class="stat"><b id="statStations">2123</b><span>emisoras</span></div>
+        <div class="stat"><b id="statCountries">22</b><span>países</span></div>
         <div class="stat"><b>24/7</b><span>en vivo</span></div>
       </div>
+      <div class="waves" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      </div>
+      <button type="button" class="globe-preview" data-nav="radio" aria-label="Ver las emisoras en el globo">
+      <svg class="globe" viewBox="0 0 320 320" aria-hidden="true"><circle cx="160" cy="160" r="138" fill="#0A152C" stroke="rgba(0,242,254,.35)" stroke-width="1.5"/><ellipse cx="160" cy="160" rx="138" ry="48" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="48" ry="138" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="104" ry="138" fill="none" stroke="rgba(148,163,184,.18)" stroke-width="1"/><circle cx="88" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="104" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="132" cy="146" r="3" fill="#00F2FE" opacity=".85"/><circle cx="100" cy="168" r="3" fill="#00F2FE" opacity=".85"/><circle cx="126" cy="182" r="3" fill="#00F2FE" opacity=".85"/><circle cx="148" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="158" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="142" cy="198" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="208" r="3" fill="#00F2FE" opacity=".85"/><circle cx="168" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="182" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="196" cy="176" r="3" fill="#00F2FE" opacity=".85"/><circle cx="92" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="162" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="222" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="128" r="3" fill="#00F2FE" opacity=".85"/><circle cx="232" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="252" cy="152" r="3" fill="#00F2FE" opacity=".85"/><circle cx="218" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="192" r="3" fill="#00F2FE" opacity=".85"/><circle cx="262" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="228" cy="212" r="3" fill="#00F2FE" opacity=".85"/><circle class="globe-pulse" cx="124" cy="164" r="5" fill="none" stroke="#FACC15" stroke-width="1.5"/><circle cx="124" cy="164" r="5" fill="#FACC15"/><circle cx="124" cy="164" r="2" fill="#fff"/></svg>
+      <span class="globe-caption"><b>EN VIVO</b> · 2.123 emisoras en 22 países — toca para escuchar</span>
+      </button>
     </div>
 
     <div class="section-head">
@@ -81,7 +88,7 @@
     </div>
 
     <div id="historySec" hidden>
-      <div class="section-head"><h2>🕘 Escuchadas recientemente</h2></div>
+      <div class="section-head"><h2>Escuchadas recientemente</h2></div>
       <div id="historyRow" class="hist-row"></div>
     </div>
 
@@ -91,9 +98,28 @@
     <div id="genreChips" class="chips"></div>
 
     <div class="section-head">
-      <h2>📢 Avisos</h2><span id="badge-avisos" class="count-badge" hidden></span>
+      <h2>Cobertura en 22 países</h2>
+      <button class="linklike" data-nav="radio">Ver todas →</button>
+    </div>
+    <div id="coverageGrid" class="coverage-grid"></div>
+
+    <div class="section-head">
+      <h2>Avisos</h2><span id="badge-avisos" class="count-badge" hidden></span>
     </div>
     <div id="lista-avisos" class="avisos-lista"></div>
+
+    <div class="section-head">
+      <h2>Todo Radio Latina</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><h3>Globo 3D</h3><p>Gira el mundo y sintoniza cualquier emisora con un toque. Los puntos celestes son emisoras en vivo y el marcador amarillo es la que suena.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg><h3>Directorio por país, ciudad y género</h3><p>2.123 emisoras organizadas para que encuentres la tuya en segundos, del país a la ciudad.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg><h3>Podcasts y chat</h3><p>Podcasts latinos con su portada real, episodio por episodio, y chat de oyentes en vivo.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20V8M15 20v-9M20 20V5"/></svg><h3>Ecualizador</h3><p>Ajusta graves y agudos a tu gusto desde la aplicación.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h3>Temporizador</h3><p>La radio se apaga sola en el tiempo que elijas.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><h3>Mesita de Noche</h3><p>La pantalla se queda tranquila mientras la radio sigue sonando.</p></div>
+      <div class="feature-card"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 9a6 6 0 1 0-12 0c0 6-2.5 7-2.5 7h17S18 15 18 9"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg><h3>Alarma</h3><p>Despierta con tu emisora favorita, a la hora y los días que elijas.</p></div>
+    </div>
 
     <div class="cta-banner glass">
       <div>
@@ -116,7 +142,7 @@
         <input id="q" type="search" placeholder="Buscar por nombre, ciudad…" autocomplete="off">
       </div>
       <select id="fGenre" aria-label="Filtrar por género"><option value="">Todos los géneros</option></select>
-      <button id="fFavs" class="chip-toggle" aria-pressed="false">❤️ Favoritas</button>
+      <button id="fFavs" class="chip-toggle" aria-pressed="false"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M12 21C7 16.5 3 13.3 3 9.3 3 6.4 5.2 4.5 7.7 4.5c1.7 0 3.3.9 4.3 2.4C13 5.4 14.6 4.5 16.3 4.5 18.8 4.5 21 6.4 21 9.3c0 4-4 7.2-9 11.7z"/></svg>Favoritas</button>
     </div>
     <div id="countryChips" class="chips scroll-x"></div>
     <div id="cityRow" hidden>
@@ -125,7 +151,7 @@
     </div>
     <div id="grid" class="cards-grid"></div>
     <div class="more-wrap"><button id="gridMore" class="btn btn-ghost" hidden>Ver más</button></div>
-    <div id="gridEmpty" class="empty" hidden>No encontramos emisoras con ese filtro. Prueba con otra búsqueda. 🔍</div>
+    <div id="gridEmpty" class="empty" hidden>No encontramos emisoras con ese filtro. Prueba con otra búsqueda.</div>
   </section>
 
   <!-- ============ PODCASTS ============ -->
@@ -133,7 +159,7 @@
     <div class="pod-hero">
       <img class="pod-hero-logo" src="assets/logos/podcast-d2-rosa-fuego.svg?v=20260927f" alt="Podcasts" width="88" height="88">
       <div>
-        <h2>🎙️ Podcasts</h2>
+        <h2>Podcasts</h2>
         <p class="muted">Podcasts latinos con su portada real, episodio por episodio.</p>
       </div>
     </div>
@@ -146,10 +172,10 @@
     <div id="podCatChips" class="chips scroll-x"></div>
     <div id="podGrid" class="pod-grid"></div>
     <div id="podEmpty" class="empty" hidden>
-      Aún no hay podcasts publicados. ¿Tienes el tuyo? Envíalo y lo revisamos. 🎙️<br><br>
-      <button class="btn btn-primary" id="podGoAgrega">🎙️ Agrega tu podcast</button>
+      Aún no hay podcasts publicados. ¿Tienes el tuyo? Envíalo y lo revisamos.<br><br>
+      <button class="btn btn-primary" id="podGoAgrega">Agrega tu podcast</button>
     </div>
-    <div class="more-wrap"><button class="linklike" id="podGoAgrega2">🎙️ ¿Tienes un podcast? Agrégalo aquí →</button></div>
+    <div class="more-wrap"><button class="linklike" id="podGoAgrega2">¿Tienes un podcast? Agrégalo aquí →</button></div>
     <div id="podDetail" class="pod-detail glass" hidden>
       <button id="podDetailClose" class="icon-btn" title="Cerrar">✕</button>
       <div class="pod-detail-head">
@@ -173,28 +199,28 @@
     </div>
     <div class="tabs glass">
       <button id="tabGeneral" class="tab active">Sala general</button>
-      <button id="tabPriv" class="tab">Salas privadas <span class="crown" title="Premium">👑</span></button>
+      <button id="tabPriv" class="tab">Salas privadas <span class="crown" title="Premium"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></span></button>
     </div>
 
     <div id="paneGeneral" class="chat-pane">
       <div id="chatMeta" class="chat-meta">Conectando…</div>
       <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-label="Mensajes de la sala general"></div>
       <form id="chatForm" class="chat-form glass" autocomplete="off">
-        <button type="button" id="profileBtn" class="icon-btn" title="Mi perfil">👤</button>
+        <button type="button" id="profileBtn" class="icon-btn" title="Mi perfil"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
         <input id="chatInput" class="chat-input" type="text" maxlength="200" placeholder="Escribe un mensaje…" aria-label="Escribe un mensaje">
         <button class="btn btn-primary" id="chatSend" type="submit">Enviar</button>
       </form>
-      <p class="hint">Gratis: 10 mensajes al día · Premium: ilimitado 💬</p>
+      <p class="hint">Gratis: 10 mensajes al día · Premium: ilimitado</p>
     </div>
 
     <div id="panePriv" class="chat-pane" hidden>
       <div class="rooms-actions">
-        <button id="createRoomBtn" class="btn btn-primary">＋ Crear sala <span class="crown">👑</span></button>
+        <button id="createRoomBtn" class="btn btn-primary">＋ Crear sala <span class="crown"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></span></button>
         <button id="joinRoomBtn" class="btn btn-ghost">Unirse con código</button>
       </div>
       <div id="myRooms" class="rooms-list"></div>
       <div class="premium-gate glass">
-        <div class="gate-icon">👑</div>
+        <div class="gate-icon"><svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></div>
         <h3>Mensajes privados Premium</h3>
         <p>Solo los usuarios <b>Premium</b> pueden enviar mensajes privados. Únete a una sala con un código para leer, o hazte Premium para conversar en privado con quien quieras.</p>
         <button class="btn btn-primary" id="gatePremiumBtn">Conseguir Premium</button>
@@ -210,9 +236,9 @@
           <button class="btn btn-primary" type="submit">Enviar</button>
         </form>
         <div class="room-foot">
-          <button id="roomInviteBtn" class="linklike">📨 Invitar con código</button>
+          <button id="roomInviteBtn" class="linklike">Invitar con código</button>
           <button id="roomLeaveBtn" class="linklike danger">Salir de la sala</button>
-          <button id="roomDeleteBtn" class="linklike danger" hidden>🗑 Eliminar sala</button>
+          <button id="roomDeleteBtn" class="linklike danger" hidden>Eliminar sala</button>
         </div>
       </div>
 <div id="salaView" class="room-view glass" hidden>
@@ -247,7 +273,7 @@
         </ul>
       </div>
       <div class="info-card glass premium-card">
-        <div class="gate-icon">👑</div>
+        <div class="gate-icon"><svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></div>
         <h3>Radio Latina Premium</h3>
         <p>Compra única de <b>USD 2.50</b>: chat sin límites, mensajes privados, elige la emisora de tu alarma y más. Un solo pago, para siempre.</p>
         <button class="btn btn-primary" id="infoPremiumBtn">Quiero Premium</button>
@@ -291,10 +317,10 @@
         <a class="btn btn-primary" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Unirme a la prueba</a>
       </div>
     </div>
-    <p class="foot-note">Radio Latina · Hecho con ❤️ para la comunidad latina</p>
+    <p class="foot-note">Radio Latina · Hecho con ♥ para la comunidad latina</p>
   </section>
   <section id="agrega-emisora" class="page ae-wrap">
-    <div class="page-title"><h2>📻 Agrega tu emisora</h2></div>
+    <div class="page-title"><h2>Agrega tu emisora</h2></div>
     <p class="ae-sub">Tu emisora sonando en Radio Latina: en la web y en la app.</p>
     <form id="ae-form" class="ae-form glass">
       <input id="ae-nombre" type="text" required maxlength="60" placeholder="Nombre de la emisora *">
@@ -575,7 +601,7 @@
   </section>
 
   <section id="agrega-podcast" class="page ae-wrap">
-    <div class="page-title"><h2>🎙️ Agrega tu podcast</h2></div>
+    <div class="page-title"><h2>Agrega tu podcast</h2></div>
     <p class="ae-sub">Tu podcast en Radio Latina: en la web y en la app. Solo el feed RSS o el MP3 directo del episodio — nada inventado.</p>
     <form id="ap-form" class="ae-form glass">
       <input id="ap-titulo" type="text" required maxlength="80" placeholder="Título del podcast *">
@@ -601,27 +627,27 @@
 </main>
 
 <nav class="bottomnav glass" aria-label="Navegación principal">
-  <button data-nav="inicio" class="bnav active"><span>🏠</span><small>Inicio</small></button>
-  <button data-nav="radio" class="bnav"><span>📻</span><small>Radio</small></button>
-  <button data-nav="podcasts" class="bnav"><span>🎙️</span><small>Podcasts</small></button>
-  <button data-nav="chat" class="bnav"><span>💬</span><small>Chat</small></button>
-  <button data-nav="info" class="bnav"><span>ℹ️</span><small>Info</small></button>
+  <button data-nav="inicio" class="bnav active"><span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span><small>Inicio</small></button>
+  <button data-nav="radio" class="bnav"><span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="1.6" fill="currentColor" stroke="none"/><path d="M12 15v6"/><path d="M8.2 9.2a5.4 5.4 0 0 1 7.6 0"/><path d="M5.8 6.8a8.8 8.8 0 0 1 12.4 0"/></svg></span><small>Radio</small></button>
+  <button data-nav="podcasts" class="bnav"><span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg></span><small>Podcasts</small></button>
+  <button data-nav="chat" class="bnav"><span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg></span><small>Chat</small></button>
+  <button data-nav="info" class="bnav"><span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/></svg></span><small>Info</small></button>
 </nav>
 
 <div id="playerbar" class="playerbar glass" hidden>
   <img id="pbLogo" class="pb-logo" alt="">
   <div class="pb-meta"><b id="pbName"></b><span id="pbSub"></span><span id="pbAdsBadge" class="ads-badge" hidden>Puede incluir anuncios de su proveedor</span></div>
   <div class="eq" id="pbEq" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-  <button id="pbTimer" class="pb-btn pb-tool" aria-label="Temporizador de apagado" title="Temporizador de apagado">⏱<span id="tmBadge" class="tm-badge" hidden></span></button>
+  <button id="pbTimer" class="pb-btn pb-tool" aria-label="Temporizador de apagado" title="Temporizador de apagado"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="tmBadge" class="tm-badge" hidden></span></button>
   <button id="pbShare" class="pb-btn pb-tool" aria-label="Compartir emisora" title="Compartir emisora">↗</button>
-  <button id="pbSala" class="pb-btn pb-tool" aria-label="Sala en vivo" title="Sala en vivo">💬</button>
+  <button id="pbSala" class="pb-btn pb-tool" aria-label="Sala en vivo" title="Sala en vivo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-3-.4-4.2-1.1L3 20l1.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg></button>
   <button id="pbToggle" class="pb-btn" aria-label="Pausar">⏸</button>
   <button id="pbClose" class="pb-btn pb-close" aria-label="Cerrar reproductor">✕</button>
 </div>
 
 <div id="timerModal" class="modal" hidden>
   <div class="modal-card glass">
-    <h3>⏱️ Temporizador de apagado</h3>
+    <h3>Temporizador de apagado</h3>
     <p class="muted">La radio se detendrá sola en…</p>
     <div id="tmPresets" class="chips" style="justify-content:center"></div>
     <p id="tmStatus" class="hint"></p>
@@ -634,7 +660,7 @@
 
 <div id="inviteModal" class="modal" hidden>
   <div class="modal-card glass">
-    <h3>📨 Invitar a una sala privada</h3>
+    <h3>Invitar a una sala privada</h3>
     <p class="muted">Elige una de tus salas: se copiará su código para que lo compartas en el chat.</p>
     <div id="inviteRooms" class="rooms-list" style="margin-top:14px"></div>
     <div class="modal-actions">
@@ -645,7 +671,7 @@
 
 <div id="profileModal" class="modal" hidden>
   <div class="modal-card glass">
-    <h3>👤 Tu perfil del chat</h3>
+    <h3>Tu perfil del chat</h3>
     <p class="muted">Así te verán los demás oyentes.</p>
     <label>Apodo<input id="pfNick" maxlength="16" placeholder="Ej: LaPaisita" autocomplete="off"></label>
     <div class="row2">
@@ -661,7 +687,7 @@
 
 <div id="premiumModal" class="modal" hidden>
   <div class="modal-card glass premium-card">
-    <div class="gate-icon">👑</div>
+    <div class="gate-icon"><svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" aria-hidden="true"><path d="M2.5 7.5 7 10.5 12 4l5 6.5 4.5-3L19.5 19h-15L2.5 7.5z"/></svg></div>
     <h3>Radio Latina Premium</h3>
     <ul class="check-list">
       <li>Chat sin límites (gratis: 10 mensajes/día)</li>
@@ -686,10 +712,19 @@
   </div>
 </div>
 
-<footer class="rl-footer"><span id="visitCount">👥 … visitas</span><span>·</span><span>Radio Latina — Tu país donde estés</span></footer>
+<footer class="rl-footer">
+  <div class="rl-footer-links">
+    <a class="linklike" href="politica-de-privacidad.html">Política de Privacidad</a>
+    <a class="linklike" href="condiciones.html">Condiciones de uso</a>
+    <button class="linklike" data-nav="info">Preguntas frecuentes</button>
+  </div>
+  <a class="btn btn-primary btn-sm" href="https://paypal.me/jeyko1" target="_blank" rel="noopener">Donar con PayPal</a>
+  <span id="visitCount">… visitas</span>
+  <span>Radio Latina — Tu país donde estés</span>
+</footer>
 <div id="toast" class="toast" role="status"></div>
 <audio id="audio" preload="none"></audio>
 <script src="ads-badge.js"></script>
-<script src="app.js?v=20261010c"></script>
+<script src="app.js?v=20261114a"></script>
 </body>
 </html>
