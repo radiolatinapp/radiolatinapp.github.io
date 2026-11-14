@@ -52,6 +52,13 @@ img{display:block;max-width:100%}
 .btn:active{transform:scale(.97)}
 .btn-primary{color:#040914;background:#FACC15;font-family:var(--font-heading);box-shadow:0 8px 24px rgba(250,204,21,.4);padding:11px 20px}
 .btn-primary:hover{background:#EAB308;box-shadow:0 10px 30px rgba(250,204,21,.55)}
+/* Botón Ko-fi «Donar con tarjeta» (2026-11-14): pareja del de PayPal en el
+   bloque Donaciones — mismo azul marino + amarillo, invertido: fondo
+   marino, borde y texto amarillos, con ícono vectorial de tarjeta. Se lee
+   igual en tema oscuro y claro porque los colores son fijos de marca. */
+.btn-kofi{color:#FACC15;background:#040914;border:1.5px solid #FACC15;box-shadow:0 8px 24px rgba(4,9,20,.35);padding:11px 20px;white-space:nowrap}
+.btn-kofi:hover{background:#0A152C;box-shadow:0 10px 30px rgba(4,9,20,.5)}
+.btn-kofi svg{flex:none}
 .btn-ghost{background:var(--surface2);border:1px solid var(--line);padding:11px 20px}
 .btn-ghost:hover{background:rgba(255,255,255,.13)}
 .btn-lg{padding:14px 28px;font-size:1.02rem;border-radius:16px}
@@ -236,17 +243,28 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
 .footer-donate h3{margin:0 0 8px;font-size:1.15rem}
 .footer-donate p{margin:0 auto 4px;max-width:640px}
 .footer-donate .donate-methods{margin:16px 0}
+/* Botones a todo lo ancho de su tarjeta: PayPal y Ko-fi quedan como pareja
+   alineada y equilibrada (mismo ancho), también Copiar en Zelle/Nequi. */
+.footer-donate .donate-method .btn{width:100%}
 .footer-donate .tiny{margin-top:10px}
 .donate-flash{animation:donateFlash 1.8s ease}
 @keyframes donateFlash{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,0)}25%{box-shadow:0 0 0 4px rgba(250,204,21,.55),0 0 24px rgba(250,204,21,.35)}}
 @media (max-width:760px){
-  .footer-donate .donate-methods{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  /* 4 métodos (PayPal, Ko-fi, Zelle, Nequi) en 2×2: en 3 columnas cada
+     tarjeta quedaba de ~110 px y los botones no cabían con holgura. */
+  .footer-donate .donate-methods{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .footer-donate .donate-method{padding:10px 6px;gap:6px}
   .footer-donate .donate-method b{font-size:.82rem}
+  /* Títulos a la misma altura (2 líneas: título + pastilla): sin esto el
+     botón de PayPal quedaba ~28 px más arriba que el de Ko-fi porque su
+     título es de una sola línea. */
+  .footer-donate .donate-method b{display:flex;flex-direction:column;align-items:center;min-height:46px}
+  .footer-donate .btn-kofi{padding:7px 6px;font-size:.75rem}
+  .footer-donate .btn-kofi svg{width:14px;height:14px}
   .footer-donate .donate-only{display:block;margin:4px auto 0;font-size:.62rem;padding:2px 6px;white-space:normal}
   .footer-donate .zelle-qr{width:84px}
   .footer-donate .donate-number{font-size:.9rem}
-  .footer-donate .donate-method span{font-size:.78rem;overflow-wrap:anywhere}
+  .footer-donate .donate-method span{font-size:.78rem;overflow-wrap:break-word}
   .footer-donate .btn-sm{padding:7px 8px;font-size:.78rem}
 }
 /* --- Barra de apoyo (2026-11-14) ---

@@ -1774,16 +1774,37 @@ function rlInitSpaceFx(){
        hace visibles en los dos temas. Está detrás del contenido (el canvas
        es z-index 0) y se desvanece a transparente, sin tapar nada. */
     patch={cx:cx,cy:cy,r:Math.max(rx,ry)+60};
+    /* FIX 2026-11-14 — órbita del universo de AFUERA centrada en el HERO
+       en móvil (antes, en el panel): el panel es casi a todo lo ancho y
+       de fondo sólido, así que la órbita pegada a él (+22 px) dejaba al
+       satélite y al planeta ESCONDIDOS detrás del panel casi toda la
+       órbita (solo asomaban un fragmento en los bordes) y el planeta se
+       recortaba en el borde derecho de la pantalla. Centrada en el hero,
+       la órbita recorre todo el alto (también por detrás del texto, que
+       es transparente) y el satélite/planeta se ven la mayor parte del
+       tiempo. En escritorio no cambia nada (ocx=cx, ocy=cy, orx=rx,
+       ory=ry). */
+    var ocx=cx, ocy=cy, orx=rx, ory=ry;
+    if(mob){
+      ocx=W/2; ocy=Math.round(H*0.58);
+      orx=Math.max(24,W/2-30);
+      ory=Math.max(24,Math.min(H-ocy-30,ocy-30));
+    }
     sats=[
-      {a:rnd(0,6.28),sp:0.055,rx:rx,ry:ry,cx:cx,cy:cy,wt:0,rings:[],col:'#00F2FE',sc:1},
-      {a:rnd(0,6.28),sp:-0.042,rx:rx*0.86,ry:ry*0.86,cx:cx,cy:cy,wt:1.2,rings:[],col:'#FACC15',sc:0.85}
+      {a:rnd(0,6.28),sp:0.055,rx:orx,ry:ory,cx:ocx,cy:ocy,wt:0,rings:[],col:'#00F2FE',sc:1},
+      {a:rnd(0,6.28),sp:-0.042,rx:orx*0.86,ry:ory*0.86,cx:ocx,cy:ocy,wt:1.2,rings:[],col:'#FACC15',sc:0.85}
     ];
     if(mob) sats.length=1;
     planets=[];
     if(mob){
-      var prx=Math.min(rx+48,Math.max(24,cx-26),Math.max(24,W-cx-26));
-      var pry=Math.min(ry+48,Math.max(24,cy-26),Math.max(24,H-cy-26));
-      planets.push({kind:'ringed',orb:true,a:rnd(0,6.28),sp:0.02,rx:prx,ry:pry,cx:cx,cy:cy,r:18,ph:rnd(0,6.28)});
+      /* Planeta más grande (r 20) en la misma órbita del hero, un poco
+         por dentro que el satélite, y con el radio recortado por la
+         extensión de los anillos (r*1.9) para que NUNCA se corte en el
+         borde de la pantalla. */
+      var pr=20, ringExt=pr*1.9+6;
+      var prx=Math.max(24,Math.min(orx-24, W/2-ringExt-6));
+      var pry=Math.max(24,Math.min(ory-24, Math.min(H-ocy-ringExt-6, ocy-ringExt-6)));
+      planets.push({kind:'ringed',orb:true,a:rnd(0,6.28),sp:0.02,rx:prx,ry:pry,cx:ocx,cy:ocy,r:pr,ph:rnd(0,6.28)});
     }
     else{
       planets.push({kind:'ringed',x:W*0.07,y:H*0.86,r:30,vx:1.6,vy:-0.8,ph:rnd(0,6.28)});
@@ -1815,6 +1836,9 @@ function rlInitSpaceFx(){
   }
   function drawPlanet(p,t){
     var x=p.x,y=p.y,r=p.r;
+    /* Halo oscuro detrás del planeta en móvil (tema claro): sin él el
+       planeta y sus anillos se pierden sobre el fondo claro. */
+    if(isMob()) glow(x,y,r*2.4,'rgba(2,6,18,0.4)',0.6);
     if(p.kind==='ringed'){
       glow(x,y,r*2.6,'rgba(0,242,254,0.10)',0.5);
       ctx.save(); ctx.translate(x,y); ctx.rotate(-0.32);
@@ -1864,7 +1888,11 @@ function rlInitSpaceFx(){
     }
   }
   function drawSat(s,t,dt){
-    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc*(isMob()?1.2:1);
+    var x=s.cx+Math.cos(s.a)*s.rx, y=s.cy+Math.sin(s.a)*s.ry, sc=s.sc*(isMob()?1.4:1);
+    /* Halo oscuro detrás del satélite en móvil: en tema claro el fondo
+       es claro y el satélite se pierde; el halo lo hace leer sobre
+       fondo claro (en tema oscuro es invisible). */
+    if(isMob()) glow(x,y,34,'rgba(2,6,18,0.5)',0.7);
     s.wt-=dt;
     if(s.wt<=0){ s.wt=2.4; s.rings.push({r:8,a:0.55}); }
     for(var i=s.rings.length-1;i>=0;i--){
@@ -2019,7 +2047,12 @@ function rlInitGlobeFx(){
       i++;
     }
     var orbitR=Math.max(20,Math.min(diskR+16,Math.min(W,H)/2-6));
-    sat={a:rnd(0,6.28),sp:0.05,rx:orbitR,ry:orbitR*0.92,cx:cx,cy:cy,wt:0,rings:[],col:'#00F2FE',sc:mob?0.55:0.7};
+    /* FIX 2026-11-14 — el satélite rozaba la pastilla de atribución
+       (abajo a la derecha): su cuerpo pasaba justo por el borde
+       izquierdo de la pastilla. Se desplaza la órbita 6 px a la
+       izquierda solo en móvil (cx-6) para que el cuerpo quede despejado
+       de la pastilla en el punto bajo. */
+    sat={a:rnd(0,6.28),sp:0.05,rx:orbitR,ry:orbitR*0.92,cx:cx-(mob?6:0),cy:cy,wt:0,rings:[],col:'#00F2FE',sc:mob?0.55:0.7};
     planet=null;
     var pr=mob?9:13, px0=26, py0=26;
     var pdx=px0-cx, pdy=py0-cy;
