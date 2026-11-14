@@ -143,6 +143,7 @@ function playStation(s){
   audio.src=s.stream;
   audio.play().catch(function(){ onStreamError(s); });
   markPlaying();
+  if(typeof rlGlobeShowTuned==='function') rlGlobeShowTuned(s);
   if(histTimer) clearTimeout(histTimer);
   var me=s;
   histTimer=setTimeout(function(){ if(current===me) histPush(me); },10000);
@@ -163,7 +164,7 @@ el('pbToggle').addEventListener('click',function(){
   if(audio.paused){ audio.play().catch(function(){ onStreamError(current); }); setPlayingUI(true); }
   else{ audio.pause(); setPlayingUI(false); }
 });
-el('pbClose').addEventListener('click',function(){ audio.pause(); audio.removeAttribute('src'); current=null; el('playerbar').hidden=true; markPlaying(); });
+el('pbClose').addEventListener('click',function(){ audio.pause(); audio.removeAttribute('src'); current=null; el('playerbar').hidden=true; markPlaying(); if(typeof rlGlobeClearTuned==='function') rlGlobeClearTuned(); });
 audio.addEventListener('error',function(){ if(current) onStreamError(current); });
 audio.addEventListener('playing',function(){ setPlayingUI(true); });
 audio.addEventListener('pause',function(){ setPlayingUI(false); });
@@ -415,6 +416,7 @@ function initCatalog(){
     cc.innerHTML='<button class="chip active" data-c="">'+SVG_GLOBE+' Todas</button>'+clist.map(function(c){return '<button class="chip" data-c="'+esc(c)+'">'+flagImg(countryCode(c), c)+' '+esc(c)+'</button>';}).join('');
     cc.querySelectorAll('.chip').forEach(function(ch){ ch.addEventListener('click',function(){ selectCountry(ch.getAttribute('data-c')); }); });
     buildCoverage();
+    if(typeof rlGlobeSetStations==='function') rlGlobeSetStations();
     var genres={}; d.forEach(function(s){ var g=String(s.genre||'').toLowerCase(); if(g) genres[g]=s.genre; });
     var fg=el('fGenre');
     Object.keys(genres).sort().forEach(function(g){ var o=document.createElement('option'); o.value=g; o.textContent=genres[g]; fg.appendChild(o); });
@@ -896,6 +898,7 @@ async function initChat(){
 
 /* ---------- init ---------- */
 initCatalog();
+rlInitGlobe();
 /* tema guardado (el <head> ya lo aplicó para evitar flash; aquí se sincroniza el botón) */
 (function(){ var t='auto'; try{ t=localStorage.getItem(THEME_KEY)||'auto'; }catch(e){} applyTheme(t); })();
 /* temporizador: rearmar si sobrevivió una recarga */
@@ -1389,3 +1392,225 @@ function rlPintarSalasVerdes(){
     });
   });
 }
+
+/* ================= GLOBO 3D EN VIVO (MapLibre + NASA GIBS Blue Marble) =================
+   Globo real como el de la app: proyección globo, teselas Blue Marble de la NASA,
+   puntos celestes por ciudad (desde stations.json) y marcador amarillo de la
+   emisora que suena. Si la red externa falla, se muestra el respaldo honesto
+   del index.html y nada se inventa. */
+var RL_GLOBE_MAP=null, rlGlobeData=null, rlGlobeTunedMarker=null;
+var rlGlobeSpinOn=false, rlGlobeSpinRaf=null, rlGlobeSpinLast=0, rlGlobeHoldUntil=0;
+var rlGlobeVisible=true, rlGlobeInView=true, rlGlobeInitStarted=false, rlGlobeLoadTimer=null, rlGlobeTipTimer=null;
+
+/* Centro de cada país (lon, lat) — respaldo cuando la ciudad no tiene coordenada propia. */
+var RL_COUNTRY_CENTER={AR:[-63.6,-35.4],BO:[-63.6,-16.3],BR:[-51.9,-14.2],CL:[-70.7,-30.0],CO:[-74.3,4.6],CR:[-83.8,9.7],CU:[-79.5,21.5],DO:[-70.2,18.7],EC:[-78.5,-1.4],ES:[-3.7,40.2],GT:[-90.3,15.5],HN:[-86.8,15.2],MX:[-102.6,23.6],NI:[-85.2,12.9],PA:[-80.8,8.5],PE:[-75.0,-9.2],PR:[-66.6,18.2],PY:[-58.4,-23.4],SV:[-88.9,13.7],US:[-98.6,39.8],UY:[-56.0,-32.5],VE:[-66.6,6.4]};
+/* Ciudades con más emisoras (lon, lat). Clave: "ciudad|código de país". */
+var RL_CITY_COORDS={
+'Ciudad de México|MX':[-99.13,19.43],'Bogotá|CO':[-74.08,4.71],'Lima|PE':[-77.04,-12.05],
+'Santo Domingo|DO':[-69.90,18.47],'California|US':[-119.42,36.78],'São Paulo|BR':[-46.63,-23.55],
+'Sao Paulo|BR':[-46.63,-23.55],'Sao Paulo (Brazil)|BR':[-46.63,-23.55],'Medellín|CO':[-75.57,6.24],
+'Buenos Aires|AR':[-58.38,-34.60],'Cali|CO':[-76.52,3.45],'Cali, Valle del Cauca|CO':[-76.52,3.45],
+'Madrid|ES':[-3.70,40.42],'Monterrey|MX':[-100.32,25.67],'Barranquilla|CO':[-74.80,11.00],
+'Santiago|CL':[-70.67,-33.45],'San Salvador|SV':[-89.22,13.69],'Virginia|US':[-78.66,37.43],
+'La Paz|BO':[-68.15,-16.50],'Manizales|CO':[-75.51,5.07],'Rio Grande do Sul|BR':[-51.23,-30.03],
+'San José|CR':[-84.09,9.93],'Cochabamba|BO':[-66.16,-17.39],'Montevideo|UY':[-56.16,-34.90],
+'Ciudad Autonoma de Buenos Aires|AR':[-58.38,-34.60],'Minas Gerais|BR':[-43.94,-19.92],
+'Rio de Janeiro|BR':[-43.21,-22.91],'San Juan|PR':[-66.06,18.47],'Florida|US':[-81.76,28.63],
+'Bucaramanga|CO':[-73.12,7.12],'Cartagena|CO':[-75.51,10.40],'Ibagué|CO':[-75.23,4.44],
+'Nuevo León|MX':[-100.32,25.67],'Guadalajara|MX':[-103.35,20.67],'Cúcuta|CO':[-72.51,7.89],
+'Pereira|CO':[-75.69,4.81],'Pichincha|EC':[-78.51,-0.22],'Ciudad de Guatemala|GT':[-90.51,14.63],
+'Distrito Federal|MX':[-99.13,19.43],'Torreón|MX':[-103.44,25.54],'Tampico|MX':[-97.86,22.23],
+'Concepción|CL':[-73.04,-36.82],'Baja California|MX':[-114.80,29.50],'Arequipa|PE':[-71.54,-16.41],
+'New York|US':[-74.01,40.71],'Armenia|CO':[-75.68,4.54],'Montería|CO':[-75.88,8.75],
+'Rosario|AR':[-60.65,-32.95],'Valparaíso|CL':[-71.63,-33.05],'San Luis Potosí|MX':[-100.98,22.15],
+'Veracruz|MX':[-96.13,19.20],'Catalunya|ES':[2.17,41.39],'Neiva|CO':[-75.28,2.94],
+'Popayán|CO':[-76.61,2.44],'Puerto Vallarta|MX':[-105.23,20.62],'Mexicali|MX':[-115.45,32.62],
+'Puebla|MX':[-98.21,19.04],'Chihuahua|MX':[-106.08,28.63],'Aguascalientes|MX':[-102.30,21.88],
+'azuay|EC':[-79.00,-2.90],'Amazonas|PE':[-77.87,-6.23],'Caracas|VE':[-66.90,10.49],
+'Quito|EC':[-78.51,-0.22],'La Habana|CU':[-82.37,23.11],'Santa Fe|AR':[-60.70,-31.63],
+'Asuncion|PY':[-57.64,-25.26],'Pasto|CO':[-77.28,1.21],'León|MX':[-101.68,21.12],
+'Antioquia|CO':[-75.57,6.24],'Nariño|CO':[-77.28,1.21],'Villavicencio|CO':[-73.64,4.15],
+'Córdoba(Argentina)|AR':[-64.18,-31.42],'Provincia de Buenos Aires|AR':[-57.95,-34.92],
+'Distrito Federal|BR':[-47.88,-15.79],'Pernambuco|BR':[-34.90,-8.05],'Tunja|CO':[-73.36,5.54],
+'Acapulco|MX':[-99.89,16.85],'Villahermosa|MX':[-92.93,17.99],'Querétaro|MX':[-100.39,20.59],
+'Mazatlán|MX':[-106.41,23.25],'Ensenada|MX':[-116.60,31.87],'Ciudad Juárez|MX':[-106.49,31.74],
+'Culiacán|MX':[-107.39,24.80],'Tijuana|MX':[-117.04,32.51],'Atacama|CL':[-70.33,-27.37],
+'Santiago de los Caballeros|DO':[-70.70,19.45],'Málaga|ES':[-4.42,36.72]
+};
+function rlHashStr(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0); }
+function rlCityCoords(city,country,code){
+  var key=(city||'')+'|'+(code||'');
+  if(RL_CITY_COORDS.hasOwnProperty(key)) return RL_CITY_COORDS[key];
+  var c=RL_COUNTRY_CENTER[code]||[-70,0];
+  if(!city) return c;
+  var h=rlHashStr(key);
+  var dl=((h%1000)/1000-0.5)*7;
+  var da=(((Math.floor(h/1000)%1000)/1000)-0.5)*5;
+  return [c[0]+dl, Math.max(-56,Math.min(58,c[1]+da))];
+}
+/* Un punto por ciudad (con su conteo de emisoras): 462 puntos, liviano. */
+function rlGlobeGeoJSON(){
+  var groups={}, order=[];
+  STATIONS.forEach(function(s){
+    var k=(s.city||'')+'|'+(s.country||'')+'|'+(s.code||'');
+    if(!groups[k]){ groups[k]={city:s.city||'',country:s.country||'',code:s.code||'',count:0}; order.push(k); }
+    groups[k].count++;
+  });
+  var feats=order.map(function(k){
+    var g=groups[k], ll=rlCityCoords(g.city,g.country,g.code);
+    return {type:'Feature',geometry:{type:'Point',coordinates:ll},properties:{city:g.city,country:g.country,code:g.code,count:g.count,label:g.city||g.country}};
+  });
+  return {type:'FeatureCollection',features:feats};
+}
+function rlGlobeSetStations(){
+  rlGlobeData=rlGlobeGeoJSON();
+  if(RL_GLOBE_MAP&&RL_GLOBE_MAP.getSource('rl-stations')){ RL_GLOBE_MAP.getSource('rl-stations').setData(rlGlobeData); }
+}
+/* Ir a Radio filtrado por la ciudad tocada en el globo. */
+function rlGoCity(country,city){
+  filters.country=country||''; filters.city=city||'';
+  resetRefine(); syncCountryChips(); renderCities(country||''); applyFilters(); go('radio');
+}
+function rlGlobeDot(a,b){
+  function v(p){ var la=p.lat*Math.PI/180, lo=p.lng*Math.PI/180; return [Math.cos(la)*Math.cos(lo),Math.cos(la)*Math.sin(lo),Math.sin(la)]; }
+  var A=v(a), B=v(b); return A[0]*B[0]+A[1]*B[1]+A[2]*B[2];
+}
+function rlGlobeUpdateTunedVisibility(){
+  if(!rlGlobeTunedMarker||!RL_GLOBE_MAP) return;
+  var dot=rlGlobeDot(RL_GLOBE_MAP.getCenter(), rlGlobeTunedMarker.getLngLat());
+  rlGlobeTunedMarker.getElement().style.display=dot>0.02?'block':'none';
+}
+function rlGlobeShowTuned(s){
+  if(!RL_GLOBE_MAP||!window.maplibregl||!s) return;
+  var ll=rlCityCoords(s.city,s.country,s.code);
+  if(!rlGlobeTunedMarker){
+    var d=document.createElement('div'); d.className='globe-tuned-marker';
+    rlGlobeTunedMarker=new maplibregl.Marker({element:d,anchor:'center'}).setLngLat(ll).addTo(RL_GLOBE_MAP);
+  } else { rlGlobeTunedMarker.setLngLat(ll); }
+  rlGlobeUpdateTunedVisibility();
+}
+function rlGlobeClearTuned(){
+  if(rlGlobeTunedMarker){ try{ rlGlobeTunedMarker.remove(); }catch(e){} rlGlobeTunedMarker=null; }
+}
+function rlGlobeHold(){ rlGlobeHoldUntil=Date.now()+5000; }
+function rlGlobeSpinTick(ts){
+  if(!RL_GLOBE_MAP){ rlGlobeSpinRaf=null; return; }
+  var now=ts||0;
+  if(rlGlobeSpinOn&&rlGlobeVisible&&rlGlobeInView&&now>rlGlobeHoldUntil){
+    var dt=Math.min(60,now-(rlGlobeSpinLast||now));
+    rlGlobeSpinLast=now;
+    var c=RL_GLOBE_MAP.getCenter();
+    RL_GLOBE_MAP.setCenter([c.lng+dt*0.0012,c.lat]);
+    rlGlobeUpdateTunedVisibility();
+  } else { rlGlobeSpinLast=now; }
+  rlGlobeSpinRaf=requestAnimationFrame(rlGlobeSpinTick);
+}
+function rlGlobeFail(){
+  var fb=el('globeFallback'); if(fb) fb.hidden=false;
+  var m=el('globeMap'); if(m) m.style.display='none';
+  var tip=el('globeTip'); if(tip) tip.hidden=true;
+}
+function rlLoadScript(src){
+  return new Promise(function(res,rej){
+    var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){ rej(new Error('script')); };
+    document.head.appendChild(s);
+  });
+}
+function rlInitGlobe(){
+  if(rlGlobeInitStarted) return; rlGlobeInitStarted=true;
+  var wrap=el('globeWrap'); if(!wrap) return;
+  function start(){
+    if(!window.maplibregl){ rlGlobeFail(); return; }
+    var mobile=window.innerWidth<=760;
+    var map;
+    try{
+      map=new maplibregl.Map({
+        container:'globeMap',
+        style:{
+          version:8,
+          sources:{
+            'rl-blue-marble':{type:'raster',tiles:['https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg'],tileSize:256,maxzoom:8,attribution:'NASA Blue Marble / GIBS'},
+            'rl-stations':{type:'geojson',data:{type:'FeatureCollection',features:[]}}
+          },
+          layers:[
+            {id:'rl-blue-marble',type:'raster',source:'rl-blue-marble'},
+            {id:'rl-halo',type:'circle',source:'rl-stations',paint:{'circle-radius':['+', ['interpolate',['linear'],['get','count'],1,2.2,10,2.8,40,3.6,80,4.2], 5],'circle-color':'#00F2FE','circle-opacity':0.16,'circle-blur':1}},
+            {id:'rl-core',type:'circle',source:'rl-stations',paint:{'circle-radius':['interpolate',['linear'],['get','count'],1,2.2,10,2.8,40,3.6,80,4.2],'circle-color':'#00F2FE','circle-opacity':0.95,'circle-stroke-width':0.6,'circle-stroke-color':'#ffffff','circle-stroke-opacity':0.7}},
+            {id:'rl-touch',type:'circle',source:'rl-stations',paint:{'circle-radius':16,'circle-color':'#ffffff','circle-opacity':0}}
+          ]
+        },
+        center:[-70,10],
+        zoom:mobile?-0.1:0.2,
+        minZoom:-1,
+        maxZoom:6,
+        attributionControl:{compact:true},
+        cooperativeGestures:true,
+        scrollZoom:false,
+        dragRotate:true,
+        touchZoomRotate:true,
+        fadeDuration:0
+      });
+    }catch(e){ rlGlobeFail(); return; }
+    RL_GLOBE_MAP=map;
+    rlGlobeLoadTimer=setTimeout(function(){ if(!map.loaded()) rlGlobeFail(); },15000);
+    map.on('load',function(){
+      clearTimeout(rlGlobeLoadTimer);
+      try{ map.setProjection({type:'globe'}); }catch(e){}
+      try{ map.setSky({'sky-color':'#040914','horizon-color':'#0e2a5c','fog-color':'#040914','sky-horizon-blend':0.6,'horizon-fog-blend':0.6,'atmosphere-blend':['interpolate',['linear'],['zoom'],0,1,4,0.4]}); }catch(e){}
+      if(rlGlobeData) map.getSource('rl-stations').setData(rlGlobeData);
+      if(current) rlGlobeShowTuned(current);
+      rlGlobeSpinOn=true; rlGlobeSpinLast=(window.performance&&performance.now)?performance.now():0;
+      if(!rlGlobeSpinRaf) rlGlobeSpinRaf=requestAnimationFrame(rlGlobeSpinTick);
+    });
+    map.on('move',function(){ rlGlobeUpdateTunedVisibility(); });
+    map.on('mousedown',rlGlobeHold); map.on('touchstart',rlGlobeHold); map.on('wheel',rlGlobeHold);
+    map.on('dragstart',rlGlobeHold); map.on('zoomstart',rlGlobeHold);
+    map.on('click','rl-touch',function(e){
+      if(!e.features||!e.features.length) return;
+      var p=e.features[0].properties;
+      var tip=el('globeTip'); if(!tip) return;
+      tip.textContent=(p.label||p.country)+' · '+p.count+(Number(p.count)===1?' emisora':' emisoras')+' →';
+      tip.hidden=false;
+      tip.onclick=function(){ tip.hidden=true; rlGoCity(p.country,p.city||''); };
+      clearTimeout(rlGlobeTipTimer);
+      rlGlobeTipTimer=setTimeout(function(){ tip.hidden=true; },6000);
+    });
+    map.on('mouseenter','rl-touch',function(){ map.getCanvas().style.cursor='pointer'; });
+    map.on('mouseleave','rl-touch',function(){ map.getCanvas().style.cursor=''; });
+  }
+  function boot(){
+    if(window.maplibregl){ start(); return; }
+    var l=document.createElement('link'); l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css'; document.head.appendChild(l);
+    rlLoadScript('https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js').then(start).catch(function(){ rlGlobeFail(); });
+  }
+  /* Carga perezosa: el globo arranca cuando se acerca a la vista. */
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(en){ if(en.isIntersecting){ try{ io.disconnect(); }catch(e){} boot(); } });
+    },{rootMargin:'200px'});
+    io.observe(wrap);
+    var io2=new IntersectionObserver(function(es){
+      es.forEach(function(en){ rlGlobeInView=en.isIntersecting; });
+    });
+    io2.observe(wrap);
+  } else { boot(); }
+  document.addEventListener('visibilitychange',function(){ rlGlobeVisible=!document.hidden; });
+}
+
+/* ================= MENÚ MÓVIL (hamburguesa) ================= */
+(function(){
+  var btn=el('menuBtn'), nav=el('mobileNav');
+  if(!btn||!nav) return;
+  function close(){ nav.hidden=true; btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var open=nav.hidden;
+    nav.hidden=!open;
+    btn.setAttribute('aria-expanded',String(open));
+  });
+  nav.addEventListener('click',function(e){ if(e.target.closest('[data-nav],a')) close(); });
+  document.addEventListener('click',function(e){
+    if(!nav.hidden&&!nav.contains(e.target)&&e.target!==btn&&!btn.contains(e.target)) close();
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();

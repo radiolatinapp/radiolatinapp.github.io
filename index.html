@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https: data:; media-src https: http:; connect-src 'self' https: wss:; frame-ancestors 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://fonts.googleapis.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' https: data:; media-src https: http:; connect-src 'self' https: wss:; worker-src 'self' blob:; frame-ancestors 'self';">
 <script>if(top!==self){top.location=self.location;}</script>
 <title>Radio Latina — Tu país donde estés</title>
 <meta name="description" content="Radio Latina: miles de emisoras latinas en vivo, chat de oyentes y tu país donde estés.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261114a">
+<link rel="stylesheet" href="styles.css?v=20261114b">
 <link rel="icon" type="image/png" href="assets/logos/d1-logo-512.png">
 <link rel="apple-touch-icon" href="assets/logos/d1-logo-512.png">
 <script>try{var _t=localStorage.getItem('rl_theme');if(_t==='light'){document.documentElement.setAttribute('data-theme','light');}else if(_t!=='dark'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.setAttribute('data-theme','light');}}catch(_e){}</script>
@@ -39,8 +39,20 @@
     <a href="#agrega-podcast" class="navlink" id="navAgregaPod"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>Agrega tu podcast</a>
   </nav>
   <button id="themeBtn" class="icon-btn" aria-label="Cambiar tema" title="Día / noche"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  <button id="menuBtn" class="icon-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileNav"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <a class="btn btn-primary btn-sm" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar app</a>
 </header>
+
+<nav id="mobileNav" class="mobile-nav glass" hidden aria-label="Menú principal">
+  <button data-nav="inicio" class="navlink active">Inicio</button>
+  <button data-nav="radio" class="navlink">Radio en vivo</button>
+  <button data-nav="podcasts" class="navlink">Podcasts</button>
+  <button data-nav="chat" class="navlink">Chat</button>
+  <button data-nav="info" class="navlink">Info</button>
+  <a href="#agrega-emisora" class="navlink">＋ Agrega tu emisora</a>
+  <a href="#agrega-podcast" class="navlink">Agrega tu podcast</a>
+  <a class="btn btn-primary" href="https://play.google.com/apps/testing/com.radiolatina.radio" target="_blank" rel="noopener">Descargar app</a>
+</nav>
 
 <main>
   <!-- ============ INICIO ============ -->
@@ -70,10 +82,17 @@
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
       </div>
-      <button type="button" class="globe-preview" data-nav="radio" aria-label="Ver las emisoras en el globo">
-      <svg class="globe" viewBox="0 0 320 320" aria-hidden="true"><circle cx="160" cy="160" r="138" fill="#0A152C" stroke="rgba(0,242,254,.35)" stroke-width="1.5"/><ellipse cx="160" cy="160" rx="138" ry="48" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="48" ry="138" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="104" ry="138" fill="none" stroke="rgba(148,163,184,.18)" stroke-width="1"/><circle cx="88" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="104" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="132" cy="146" r="3" fill="#00F2FE" opacity=".85"/><circle cx="100" cy="168" r="3" fill="#00F2FE" opacity=".85"/><circle cx="126" cy="182" r="3" fill="#00F2FE" opacity=".85"/><circle cx="148" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="158" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="142" cy="198" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="208" r="3" fill="#00F2FE" opacity=".85"/><circle cx="168" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="182" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="196" cy="176" r="3" fill="#00F2FE" opacity=".85"/><circle cx="92" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="162" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="222" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="128" r="3" fill="#00F2FE" opacity=".85"/><circle cx="232" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="252" cy="152" r="3" fill="#00F2FE" opacity=".85"/><circle cx="218" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="192" r="3" fill="#00F2FE" opacity=".85"/><circle cx="262" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="228" cy="212" r="3" fill="#00F2FE" opacity=".85"/><circle class="globe-pulse" cx="124" cy="164" r="5" fill="none" stroke="#FACC15" stroke-width="1.5"/><circle cx="124" cy="164" r="5" fill="#FACC15"/><circle cx="124" cy="164" r="2" fill="#fff"/></svg>
-      <span class="globe-caption"><b>EN VIVO</b> · 2.123 emisoras en 22 países — toca para escuchar</span>
-      </button>
+      <div class="globe-wrap" id="globeWrap">
+        <div id="globeMap" class="globe-map" role="application" aria-label="Globo 3D con las emisoras de Radio Latina en vivo"></div>
+        <div id="globeFallback" class="globe-fallback" hidden>
+          <svg class="globe" viewBox="0 0 320 320" aria-hidden="true"><circle cx="160" cy="160" r="138" fill="#0A152C" stroke="rgba(0,242,254,.35)" stroke-width="1.5"/><ellipse cx="160" cy="160" rx="138" ry="48" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="48" ry="138" fill="none" stroke="rgba(148,163,184,.30)" stroke-width="1"/><ellipse cx="160" cy="160" rx="104" ry="138" fill="none" stroke="rgba(148,163,184,.18)" stroke-width="1"/><circle cx="88" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="104" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="132" cy="146" r="3" fill="#00F2FE" opacity=".85"/><circle cx="100" cy="168" r="3" fill="#00F2FE" opacity=".85"/><circle cx="126" cy="182" r="3" fill="#00F2FE" opacity=".85"/><circle cx="148" cy="118" r="3" fill="#00F2FE" opacity=".85"/><circle cx="158" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="142" cy="198" r="3" fill="#00F2FE" opacity=".85"/><circle cx="118" cy="208" r="3" fill="#00F2FE" opacity=".85"/><circle cx="168" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="182" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="196" cy="176" r="3" fill="#00F2FE" opacity=".85"/><circle cx="92" cy="148" r="3" fill="#00F2FE" opacity=".85"/><circle cx="162" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="222" cy="108" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="128" r="3" fill="#00F2FE" opacity=".85"/><circle cx="232" cy="158" r="3" fill="#00F2FE" opacity=".85"/><circle cx="252" cy="152" r="3" fill="#00F2FE" opacity=".85"/><circle cx="218" cy="188" r="3" fill="#00F2FE" opacity=".85"/><circle cx="242" cy="192" r="3" fill="#00F2FE" opacity=".85"/><circle cx="262" cy="138" r="3" fill="#00F2FE" opacity=".85"/><circle cx="228" cy="212" r="3" fill="#00F2FE" opacity=".85"/><circle class="globe-pulse" cx="124" cy="164" r="5" fill="none" stroke="#FACC15" stroke-width="1.5"/><circle cx="124" cy="164" r="5" fill="#FACC15"/><circle cx="124" cy="164" r="2" fill="#fff"/></svg>
+          <p>El globo en vivo no se pudo cargar. Revisa tu conexión e inténtalo de nuevo.</p>
+          <button class="btn btn-primary btn-sm" data-nav="radio">Ver las emisoras</button>
+        </div>
+        <button type="button" id="globeTip" class="globe-tip" hidden></button>
+        <span class="globe-caption"><b>EN VIVO</b> · 2.123 emisoras en 22 países — toca un punto para ver sus emisoras</span>
+        <button type="button" class="btn btn-secondary btn-sm globe-cta" data-nav="radio">Ver radio en vivo</button>
+      </div>
     </div>
 
     <div class="section-head">
@@ -725,6 +744,6 @@
 <div id="toast" class="toast" role="status"></div>
 <audio id="audio" preload="none"></audio>
 <script src="ads-badge.js"></script>
-<script src="app.js?v=20261114a"></script>
+<script src="app.js?v=20261114b"></script>
 </body>
 </html>
