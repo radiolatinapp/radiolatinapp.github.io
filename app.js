@@ -524,9 +524,9 @@ el('heroSearch').addEventListener('keydown',function(e){ if(e.key==='Enter') her
 /* ================= FIREBASE + CHAT (modelo app 1.9.19) ================= */
 var auth=null, db=null, storage=null, fbReady=false, signInPromise=null, fbInitPromise=null, chatStarted=false;
 var NICK_KEY='rl_chat_nick', SEXO_KEY='rl_chat_sexo', PAIS_KEY='rl_chat_pais', BLOCKED_KEY='rl_blocked';
-var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=200;
+var MY_ROOMS_KEY='rl_my_rooms', MAX_TEXT=280; /* REGLAS ADAPTADAS 2026-11-14: texto 1-280 (antes 200); las reglas permiten 280 en general, privada y exclusiva */
 var unsub=null, roomUnsub=null, currentRoom=null;
-var _lastMsgAt=0, _lastRoomMsgAt=0, premiumCache=null;
+var _lastMsgAt=0, _lastRoomMsgAt=0, premiumCache=null, premUidSynced=false;
 var BAD_WORDS=['pendejo','idiota','estupido','maldito','cabron','mierda','carajo','joder','puta','coño','verga','chingar','boludo','pelotudo','gilipollas','imbecil'];
 var ROOM_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ', ROOM_CODE_LEN=6;
 var PAISES=[['AF','Afganistán'],['AL','Albania'],['DE','Alemania'],['AD','Andorra'],['AO','Angola'],['AI','Anguila'],['AG','Antigua y Barbuda'],['SA','Arabia Saudita'],['DZ','Argelia'],['AR','Argentina'],['AM','Armenia'],['AW','Aruba'],['AU','Australia'],['AT','Austria'],['AZ','Azerbaiyán'],['BS','Bahamas'],['BD','Bangladés'],['BB','Barbados'],['BH','Baréin'],['BE','Bélgica'],['BZ','Belice'],['BJ','Benín'],['BM','Bermudas'],['BY','Bielorrusia'],['BO','Bolivia'],['BQ','Bonaire'],['BA','Bosnia y Herzegovina'],['BW','Botsuana'],['BR','Brasil'],['BN','Brunéi'],['BG','Bulgaria'],['BF','Burkina Faso'],['BI','Burundi'],['BT','Bután'],['CV','Cabo Verde'],['KH','Camboya'],['CM','Camerún'],['CA','Canadá'],['QA','Catar'],['TD','Chad'],['CL','Chile'],['CN','China'],['CY','Chipre'],['VA','Ciudad del Vaticano'],['CO','Colombia'],['KM','Comoras'],['CG','Congo'],['CD','Congo (RDC)'],['KP','Corea del Norte'],['KR','Corea del Sur'],['CI','Costa de Marfil'],['CR','Costa Rica'],['HR','Croacia'],['CU','Cuba'],['CW','Curazao'],['DK','Dinamarca'],['DM','Dominica'],['EC','Ecuador'],['EG','Egipto'],['SV','El Salvador'],['AE','Emiratos Árabes Unidos'],['ER','Eritrea'],['SK','Eslovaquia'],['SI','Eslovenia'],['ES','España'],['US','Estados Unidos'],['EE','Estonia'],['SZ','Esuatini'],['ET','Etiopía'],['PH','Filipinas'],['FI','Finlandia'],['FJ','Fiyi'],['FR','Francia'],['GA','Gabón'],['GM','Gambia'],['GE','Georgia'],['GH','Ghana'],['GI','Gibraltar'],['GD','Granada'],['GR','Grecia'],['GL','Groenlandia'],['GP','Guadalupe'],['GU','Guam'],['GT','Guatemala'],['GF','Guayana Francesa'],['GG','Guernsey'],['GN','Guinea'],['GQ','Guinea Ecuatorial'],['GW','Guinea-Bisáu'],['GY','Guyana'],['HT','Haití'],['HN','Honduras'],['HK','Hong Kong'],['HU','Hungría'],['IN','India'],['ID','Indonesia'],['IQ','Irak'],['IR','Irán'],['IE','Irlanda'],['IM','Isla de Man'],['NF','Isla Norfolk'],['IS','Islandia'],['KY','Islas Caimán'],['CC','Islas Cocos'],['CK','Islas Cook'],['FO','Islas Feroe'],['FK','Islas Malvinas'],['MP','Islas Marianas del Norte'],['MH','Islas Marshall'],['PN','Islas Pitcairn'],['SB','Islas Salomón'],['TC','Islas Turcas y Caicos'],['VG','Islas Vírgenes Británicas'],['VI','Islas Vírgenes de EE. UU.'],['IL','Israel'],['IT','Italia'],['JM','Jamaica'],['JP','Japón'],['JE','Jersey'],['JO','Jordania'],['KZ','Kazajistán'],['KE','Kenia'],['KG','Kirguistán'],['KI','Kiribati'],['XK','Kosovo'],['KW','Kuwait'],['LA','Laos'],['LS','Lesoto'],['LV','Letonia'],['LB','Líbano'],['LR','Liberia'],['LY','Libia'],['LI','Liechtenstein'],['LT','Lituania'],['LU','Luxemburgo'],['MO','Macao'],['MG','Madagascar'],['MY','Malasia'],['MW','Malaui'],['MV','Maldivas'],['ML','Malí'],['MT','Malta'],['MA','Marruecos'],['MQ','Martinica'],['MU','Mauricio'],['MR','Mauritania'],['YT','Mayotte'],['MX','México'],['FM','Micronesia'],['MD','Moldavia'],['MC','Mónaco'],['MN','Mongolia'],['ME','Montenegro'],['MS','Montserrat'],['MZ','Mozambique'],['MM','Myanmar'],['NA','Namibia'],['NR','Nauru'],['NP','Nepal'],['NI','Nicaragua'],['NE','Níger'],['NG','Nigeria'],['NU','Niue'],['NO','Noruega'],['NC','Nueva Caledonia'],['NZ','Nueva Zelanda'],['OM','Omán'],['NL','Países Bajos'],['PK','Pakistán'],['PW','Palaos'],['PS','Palestina'],['PA','Panamá'],['PG','Papúa Nueva Guinea'],['PY','Paraguay'],['PE','Perú'],['PF','Polinesia Francesa'],['PL','Polonia'],['PT','Portugal'],['PR','Puerto Rico'],['GB','Reino Unido'],['CF','República Centroafricana'],['CZ','República Checa'],['DO','República Dominicana'],['RE','Reunión'],['RW','Ruanda'],['RO','Rumania'],['RU','Rusia'],['EH','Sáhara Occidental'],['WS','Samoa'],['AS','Samoa Americana'],['BL','San Bartolomé'],['KN','San Cristóbal y Nieves'],['SM','San Marino'],['MF','San Martín'],['PM','San Pedro y Miquelón'],['VC','San Vicente y las Granadinas'],['SH','Santa Elena'],['LC','Santa Lucía'],['ST','Santo Tomé y Príncipe'],['SN','Senegal'],['RS','Serbia'],['SC','Seychelles'],['SL','Sierra Leona'],['SG','Singapur'],['SX','Sint Maarten'],['SY','Siria'],['SO','Somalia'],['LK','Sri Lanka'],['ZA','Sudáfrica'],['SD','Sudán'],['SS','Sudán del Sur'],['SE','Suecia'],['CH','Suiza'],['SR','Surinam'],['TH','Tailandia'],['TW','Taiwán'],['TZ','Tanzania'],['TJ','Tayikistán'],['TL','Timor Oriental'],['TG','Togo'],['TK','Tokelau'],['TO','Tonga'],['TT','Trinidad y Tobago'],['TN','Túnez'],['TM','Turkmenistán'],['TR','Turquía'],['TV','Tuvalu'],['UA','Ucrania'],['UG','Uganda'],['UY','Uruguay'],['UZ','Uzbekistán'],['VU','Vanuatu'],['VE','Venezuela'],['VN','Vietnam'],['WF','Wallis y Futuna'],['YE','Yemen'],['DJ','Yibuti'],['ZM','Zambia'],['ZW','Zimbabue']];
@@ -541,11 +541,13 @@ function fbInit(){
   }).catch(function(){ fbInitPromise=null; toast('⚠️ No se pudo conectar con el chat.'); return false; });
   return fbInitPromise;
 }
-function ensureSignedIn(){
+/* REGLAS ADAPTADAS 2026-11-14 (punto 4 Gemini): silent=true no muestra
+   toast al fallar (el contador de visitas es de fondo y no debe avisar). */
+function ensureSignedIn(silent){
   if(!fbReady) return Promise.resolve(false);
   if(auth.currentUser) return Promise.resolve(true);
   if(signInPromise) return signInPromise;
-  signInPromise=auth.signInAnonymously().then(function(){ return true; }).catch(function(){ signInPromise=null; toast('⚠️ No se pudo iniciar sesión de chat.'); return false; });
+  signInPromise=auth.signInAnonymously().then(function(){ return true; }).catch(function(){ signInPromise=null; if(!silent) toast('⚠️ No se pudo iniciar sesión de chat.'); return false; });
   return signInPromise;
 }
 function rlChatProfile(){ return { nick:localStorage.getItem(NICK_KEY)||'', sexo:localStorage.getItem(SEXO_KEY)||'', pais:localStorage.getItem(PAIS_KEY)||'' }; }
@@ -558,18 +560,31 @@ function rlChatFlag(p){ var c=String(p||'').toUpperCase(); if(!RL_CATALOGO_PAISE
 function rlDetectCountry(){ var l=(navigator.language||'es').split('-')[1]; var c=(l||'CO').toUpperCase(); return RL_CATALOGO_PAISES[c]?c:'CO'; }
 function sexIcon(s){ return s==='F'?'♀':(s==='M'?'♂':''); }
 function rlTodayKey(){ var d=new Date(); return 'rl_chat_limite_'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+/* REGLAS ADAPTADAS 2026-11-14: clave de día YYYYMMDD para rate_limits/{uid}_{dateKey} (patrón exacto de la app nueva). */
+function dayStamp(){ var d=new Date(); return d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2); }
 function rlMsgsToday(){ return parseInt(localStorage.getItem(rlTodayKey())||'0',10); }
 function rlCountMsg(){ try{ localStorage.setItem(rlTodayKey(),String(rlMsgsToday()+1)); }catch(e){} }
+/* REGLAS ADAPTADAS 2026-11-14: premium_uids/{uid} solo lo lee su dueño
+   (request.auth.uid). El navegador NO puede leer el documento del uid
+   VINCULADO de la app (otro uid): esa lectura sería denegada. Por eso el
+   Premium web se verifica contra el documento del propio uid ANÓNIMO del
+   navegador (escrito por syncPremiumUid/rlAlignPremiumUid al vincular),
+   con premium==true y until vigente, igual que isPremiumUser() del servidor. */
 async function rlIsPremiumWeb(){
   if(premiumCache!==null) return premiumCache;
   premiumCache=false;
-  try{ if(!(await ensureSignedIn())) return false;
-    /* 1.9.22 (Tarea 2, B2 - Tiger): la web verifica el uid VINCULADO (localStorage),
-     * no el anónimo del navegador (nunca coincide con el de la app). Lee el booleano. */
-    var linkUid=null; try{ linkUid=localStorage.getItem('rl_premium_uid'); }catch(e){}
-    if(!linkUid) return false;
-    var doc=await db.collection('premium_uids').doc(linkUid).get();
-    premiumCache=doc.exists&&doc.data().premium===true;
+  try{
+    if(!(await ensureSignedIn())) return false;
+    var me=auth.currentUser?auth.currentUser.uid:null;
+    if(!me) return false;
+    var own=await db.collection('premium_uids').doc(me).get();
+    if(own.exists){ var od=own.data()||{}; if(od.premium===true&&typeof od.until==='number'&&od.until>Date.now()){ premiumCache=true; return true; } }
+    /* Sin documento propio válido: intentar alinear desde el uid vinculado. */
+    if(await syncPremiumUid()){
+      var own2=await db.collection('premium_uids').doc(me).get();
+      if(own2.exists){ var od2=own2.data()||{}; premiumCache=!!(od2.premium===true&&typeof od2.until==='number'&&od2.until>Date.now()); return premiumCache; }
+    }
+    return false;
   }catch(e){ premiumCache=false; }
   return premiumCache;
 }
@@ -630,12 +645,43 @@ async function sendGeneral(){
   var now=Date.now();
   if(now-_lastMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
   if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
+  if(!(await fbInit())) return;
   if(!(await ensureSignedIn())) return;
   var prof=rlChatProfile();
+  /* Regla: apodo 1-30 caracteres (trim + slice); "Oyente" si queda vacío. */
+  var apodo=String(prof.nick||'').trim().slice(0,30)||'Oyente';
+  var sexo=prof.sexo||'X', pais=prof.pais||rlDetectCountry();
+  var uid=auth.currentUser.uid;
+  var msgCol=db.collection('rooms/general/messages');
+  /* REGLAS ADAPTADAS 2026-11-14 (patrón exacto de la app nueva):
+     Premium escribe directo con {texto, apodo, uid, pais, sexo, createdAt}
+     sin rate_limits, tras ejecutar syncPremiumUid(). Gratis usa UNA sola
+     transacción atómica: rate_limits/{uid}_{dateKey} {uid, dateKey, count: seq}
+     y el mensaje con dailySeq: seq y dateKey: dateKey (límite 10/día). */
   try{
-    await db.collection('rooms/general/messages').add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), createdAt:firebase.firestore.FieldValue.serverTimestamp() });
-    _lastMsgAt=now; rlCountMsg(); input.value='';
-  }catch(e){ toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
+    if(await rlIsPremiumWeb()){
+      await syncPremiumUid();
+      await msgCol.add({ texto:text, apodo:apodo, uid:uid, sexo:sexo, pais:pais, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+      _lastMsgAt=now; input.value='';
+    }else{
+      var dateKey=dayStamp();
+      var rateRef=db.collection('rate_limits').doc(uid+'_'+dateKey);
+      var msgRef=msgCol.doc();
+      await db.runTransaction(function(tx){
+        return tx.get(rateRef).then(function(doc){
+          var count=doc.exists?(doc.data().count||0):0;
+          if(count>=10) throw new Error('LIMIT');
+          var seq=count+1;
+          tx.set(rateRef,{ uid:uid, dateKey:dateKey, count:seq, updatedAt:firebase.firestore.FieldValue.serverTimestamp() },{ merge:true });
+          tx.set(msgRef,{ texto:text, apodo:apodo, uid:uid, sexo:sexo, pais:pais, dailySeq:seq, dateKey:dateKey, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+        });
+      });
+      _lastMsgAt=now; rlCountMsg(); input.value='';
+    }
+  }catch(e){
+    if(e&&e.message==='LIMIT'){ toast('💬 Llegaste a tus 10 mensajes de hoy. Con Premium hablas sin límites.'); openPremium(); return; }
+    toast('No se pudo enviar tu mensaje. Inténtalo de nuevo.');
+  }
 }
 /* ---------- susurro premium (privado en la sala general) ---------- */
 var seenWhisper={};
@@ -661,10 +707,16 @@ async function sendWhisper(targetNick){
   var now=Date.now();
   if(now-_lastMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
   if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
+  if(!(await fbInit())) return;
   if(!(await ensureSignedIn())) return;
   var prof=rlChatProfile();
+  var apodo=String(prof.nick||'').trim().slice(0,30)||'Oyente';
   try{
-    await db.collection('rooms/general/messages').add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), esSusurro:true, susurroPara:targetNick, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    /* REGLAS ADAPTADAS 2026-11-14: Premium escribe directo con uid, sin
+       rate_limits, tras ejecutar syncPremiumUid() (la regla exige
+       isPremiumUser(): documento propio con premium y until vigentes). */
+    await syncPremiumUid();
+    await db.collection('rooms/general/messages').add({ texto:text, apodo:apodo, uid:auth.currentUser.uid, sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), esSusurro:true, susurroPara:targetNick, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
     _lastMsgAt=now;
     toast('🔒 Privado enviado a '+targetNick+'.');
   }catch(e){ toast(e && e.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
@@ -803,11 +855,19 @@ el('roomForm').addEventListener('submit',async function(e){
   var now=Date.now();
   if(now-_lastRoomMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
   if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
+  if(!(await fbInit())) return;
   if(!(await ensureSignedIn())) return;
   var prof=rlChatProfile();
+  /* Regla: apodo 1-30 caracteres (trim + slice); "Oyente" si queda vacío. */
+  var apodo=String(prof.nick||'').trim().slice(0,30)||'Oyente';
   try{
-    await roomMessagesRef(currentRoom.code).add({ texto:text, apodo:prof.nick||'Oyente', sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), uid:auth.currentUser.uid, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
-    _lastRoomMsgAt=now; rlCountMsg(); input.value='';
+    /* REGLAS ADAPTADAS 2026-11-14: esta sala es solo Premium (puerta arriba);
+       se escribe directo con uid, sin rate_limits, tras ejecutar
+       syncPremiumUid() (la regla exige isPremiumUser(): documento propio
+       con premium y until vigentes). */
+    await syncPremiumUid();
+    await roomMessagesRef(currentRoom.code).add({ texto:text, apodo:apodo, sexo:prof.sexo||'X', pais:prof.pais||rlDetectCountry(), uid:auth.currentUser.uid, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    _lastRoomMsgAt=now; input.value='';
   }catch(err){ toast(err && err.code==='permission-denied' ? '👑 El servidor no reconoce este navegador como Premium. Cierra y abre el chat de nuevo.' : 'No se pudo enviar tu mensaje. Inténtalo de nuevo.'); }
 });
 el('roomInviteBtn').addEventListener('click',function(){
@@ -895,11 +955,27 @@ el('linkCodeBtn').addEventListener('click',async function(){
     var d=await db.collection('premium_codes').doc(code).get();
     if(!d.exists){ msg.textContent='Código no válido. Revísalo en la app.'; return; }
     var uid=d.data().uid;
-    var p=await db.collection('premium_uids').doc(uid).get();
-    if(!p.exists||p.data().premium!==true){ msg.textContent='Ese código ya no es premium.'; return; }
-    try{ localStorage.setItem('rl_premium_uid',uid); }catch(e){}
+    if(!uid){ msg.textContent='Código no válido. Revísalo en la app.'; return; }
+    /* REGLAS ADAPTADAS 2026-11-14 (punto 5 Gemini): el until que el sitio
+       escribirá en su propio premium_uids sale del documento del código:
+       si trae until numérico se usa ese; si no, updatedAt + 365 días
+       (12 meses desde que se emitió el código, no desde hoy). Si ya
+       venció, el código no activa Premium. */
+    var cd=d.data()||{}, codeUntil=null;
+    if(typeof cd.until==='number'&&isFinite(cd.until)){ codeUntil=Math.floor(cd.until); }
+    else if(cd.updatedAt&&typeof cd.updatedAt.toMillis==='function'){ codeUntil=cd.updatedAt.toMillis()+31536000000; }
+    else if(typeof cd.updatedAt==='number'){ codeUntil=cd.updatedAt+31536000000; }
+    if(codeUntil!==null&&codeUntil<=Date.now()){ msg.textContent='Este código ya venció. Genera uno nuevo en la app.'; return; }
+    /* REGLAS ADAPTADAS 2026-11-14: premium_uids/{uid} solo lo lee su dueño;
+       el navegador NO puede verificar el documento Premium de la app (otro uid).
+       El código de 6 letras (lectura pública, solo lo crea la app de un usuario
+       Premium) es la credencial: se confía en su existencia y syncPremiumUid()
+       emite el documento propio con el until derivado del código. */
+    try{ localStorage.setItem('rl_premium_uid',uid); if(codeUntil!==null){ localStorage.setItem('rl_premium_until',String(codeUntil)); } else { localStorage.removeItem('rl_premium_until'); } }catch(e){}
+    premiumCache=null; /* re-verificar contra el documento propio */
+    var okAlign=await rlAlignPremiumUid(uid); /* FIX-PREMIUM-ALIGN: alinea uid anonimo con premium */
+    if(!okAlign){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; return; }
     premiumCache=true;
-    await rlAlignPremiumUid(uid); /* FIX-PREMIUM-ALIGN: alinea uid anonimo con premium */
     msg.textContent='✅ Premium vinculado. Ya puedes enviar mensajes privados.';
     toast('👑 Premium vinculado');
   }catch(e){ msg.textContent='No se pudo verificar. Intenta de nuevo.'; }
@@ -998,31 +1074,48 @@ document.addEventListener('click',function(e){
   else toast(v);
 });
 
-/* ---------- FIX-PREMIUM-ALIGN (Tiger 2026-09-27) ----------
+/* ---------- SYNC-PREMIUM-UID / FIX-PREMIUM-ALIGN (REGLAS ADAPTADAS 2026-11-14) ----------
    El link-code guarda en localStorage el uid DE LA APP, pero el navegador
-   escribe con su uid ANONIMO. Las reglas exigen premium_uids/{request.auth.uid}.
-   Esta funcion marca el uid propio del navegador tras validar el codigo. */
-async function rlAlignPremiumUid(linkedUid){
+   escribe con su uid ANONIMO. Las reglas exigen premium_uids/{request.auth.uid}
+   con {uid, premium:true, source, until}. Bajo las reglas adaptadas el navegador
+   NO puede leer premium_uids/{uid vinculado} (solo su dueño lee su documento),
+   así que la alineación ya no verifica el documento vinculado: el código de
+   6 letras (que solo crea la app de un usuario Premium, colección
+   premium_codes de lectura pública) es la credencial. Se emite el documento
+   propio con el until derivado del código (until numérico, o updatedAt +
+   365 días; Date.now()+365 días solo como respaldo) y source 'donation'.
+   premUidSynced solo se marca cuando la escritura realmente se completó. */
+async function syncPremiumUid(){
+  if(premUidSynced) return true;
   try{
-    var luid = linkedUid || null;
-    try{ luid = luid || localStorage.getItem('rl_premium_uid'); }catch(e){}
-    if(!luid) return false; /* gratis sin vinculo: cero lecturas extra */
     if(!(await fbInit())) return false;
-    await ensureSignedIn();
-    var me = (typeof auth!=='undefined' && auth.currentUser) ? auth.currentUser.uid : null;
+    if(!(await ensureSignedIn())) return false;
+    var me=(typeof auth!=='undefined'&&auth.currentUser)?auth.currentUser.uid:null;
     if(!me) return false;
-    var mine = await db.collection('premium_uids').doc(me).get();
-    if(mine.exists && mine.data().premium === true) return true; /* ya alineado */
-    var p = await db.collection('premium_uids').doc(luid).get();
-    if(!p.exists || p.data().premium !== true) return false;
+    var mine=await db.collection('premium_uids').doc(me).get();
+    if(mine.exists){ var md=mine.data()||{}; if(md.premium===true&&typeof md.until==='number'&&md.until>Date.now()){ premUidSynced=true; return true; } }
+    var luid=null; try{ luid=localStorage.getItem('rl_premium_uid'); }catch(e){}
+    if(!luid){ premUidSynced=false; return false; } /* gratis sin vinculo: nada que sincronizar */
+    /* REGLAS ADAPTADAS 2026-11-14 (punto 5 Gemini): el until sale del
+       documento del código guardado al vincular ('rl_premium_until'):
+       until numérico del código, o updatedAt + 365 días. El
+       Date.now()+365 días queda SOLO como respaldo si no hay nada
+       guardado. Si el until guardado ya venció, no se activa Premium. */
+    var untilMs=Date.now()+31536000000; /* respaldo: 365 días (f2) */
+    try{ var cu=localStorage.getItem('rl_premium_until'); if(cu){ var n=parseInt(cu,10); if(isFinite(n)&&n>0) untilMs=n; } }catch(e){}
+    if(untilMs<=Date.now()){ premUidSynced=false; return false; } /* código vencido: no activar */
     await db.collection('premium_uids').doc(me).set({
-      premium: true,
-      vinculadoDe: luid,
-      origen: 'web-link',
-      creado: firebase.firestore.FieldValue.serverTimestamp()
-    });
+      uid:me, premium:true, source:'donation', until:Math.floor(untilMs),
+      vinculadoDe:luid,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    },{ merge:true });
+    premUidSynced=true;
     return true;
-  }catch(e){ return false; }
+  }catch(e){ premUidSynced=false; return false; }
+}
+async function rlAlignPremiumUid(linkedUid){
+  if(linkedUid){ try{ localStorage.setItem('rl_premium_uid',linkedUid); }catch(e){} }
+  return syncPremiumUid();
 }
 
 /* ---------- arranque del chat ---------- */
@@ -1059,7 +1152,13 @@ renderHistoryRow();
     var el = document.getElementById('visitCount');
     if(!el || !window.firebase) return;
     fbInit().then(function(ok){
-      if(!ok || !db) return;
+      if(!ok || !db) return false;
+      /* REGLAS ADAPTADAS 2026-11-14 (punto 4 Gemini): crear/actualizar
+         estadisticas/visitas exige isSignedIn(); encadenar la sesión
+         anónima (silenciosa: sin toast si falla) antes de escribir. */
+      return ensureSignedIn(true);
+    }).then(function(signed){
+      if(!signed) return;
       var ref = db.doc('estadisticas/visitas');
       /* La regla Firestore solo permite: crear con total==1, o actualizar con total==anterior+1.
          Por eso se lee primero y se escribe el valor literal (sin FieldValue.increment). */
@@ -1103,6 +1202,9 @@ renderHistoryRow();
     msg.textContent='Enviando...';
     try{
       if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
+      /* REGLAS ADAPTADAS 2026-11-14 (punto 4 Gemini): emisoras_pendientes
+         exige isSignedIn() para crear; sesión lista antes de escribir. */
+      if(!(await ensureSignedIn())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
       var id='p'+Date.now().toString(36);
       var fileEl=document.getElementById('ae-logo');
       var file=fileEl&&fileEl.files?fileEl.files[0]:null;
@@ -1295,6 +1397,9 @@ renderHistoryRow();
       msg.textContent='Enviando...';
       try{
         if(!(await fbInit())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
+        /* REGLAS ADAPTADAS 2026-11-14 (punto 4 Gemini): podcasts_pendientes
+           exige isSignedIn() para crear; sesión lista antes de escribir. */
+        if(!(await ensureSignedIn())){ msg.textContent='Sin conexión. Intenta de nuevo.'; return; }
         var id='pod'+Date.now().toString(36);
         await db.collection('podcasts_pendientes').doc(id).set({
           titulo:v('ap-titulo'),
@@ -1488,18 +1593,48 @@ function closeSalaView(){
 el('salaClose').addEventListener('click', closeSalaView);
 el('salaForm').addEventListener('submit', async function(e){
   e.preventDefault();
-  var text = el('salaInput').value.trim().slice(0, 500);
+  var text = el('salaInput').value.trim().slice(0, MAX_TEXT);
   if(!text || !currentSala) return;
+  if(rlNeedProfile()){ openProfile(); toast('👤 Primero crea tu perfil del chat.'); return; }
+  if(!(await rlCanChat())){ toast('💬 Llegaste a tus 10 mensajes de hoy. Con Premium hablas sin límites.'); openPremium(); return; }
+  var now=Date.now();
+  if(now-_lastMsgAt<3000){ toast('Espera un momento antes de enviar otro mensaje.'); return; }
+  if(hasBadWord(text)){ toast('Tu mensaje contiene palabras no permitidas.'); return; }
+  if(!(await fbInit())) return;
   if(!(await ensureSignedIn())) return;
+  var prof = rlChatProfile();
+  /* Regla: apodo 1-30 caracteres (trim + slice); "Oyente" si queda vacío. */
+  var apodo=String(prof.nick||'').trim().slice(0,30)||'Oyente';
+  var sexo=prof.sexo||'X', pais=prof.pais||rlDetectCountry();
+  var uid=auth.currentUser.uid;
+  var msgCol=db.collection('salas_emisora').doc(currentSala.stableId).collection('messages');
+  /* REGLAS ADAPTADAS 2026-11-14 (mismo patrón que sendGeneral): Premium escribe
+     directo tras syncPremiumUid(); gratis con UNA transacción rate_limits +
+     dailySeq/dateKey (límite 10/día). */
   try{
-    var prof = rlChatProfile();
-    await db.collection('salas_emisora').doc(currentSala.stableId).collection('messages').add({
-      texto: text, apodo: prof.nick||'Oyente', sexo: prof.sexo||'X',
-      pais: prof.pais||rlDetectCountry(), uid: auth.currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    el('salaInput').value = '';
-  }catch(err){ toast('No se pudo enviar el mensaje.'); }
+    if(await rlIsPremiumWeb()){
+      await syncPremiumUid();
+      await msgCol.add({ texto:text, apodo:apodo, uid:uid, sexo:sexo, pais:pais, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+      _lastMsgAt=now; el('salaInput').value='';
+    }else{
+      var dateKey=dayStamp();
+      var rateRef=db.collection('rate_limits').doc(uid+'_'+dateKey);
+      var msgRef=msgCol.doc();
+      await db.runTransaction(function(tx){
+        return tx.get(rateRef).then(function(doc){
+          var count=doc.exists?(doc.data().count||0):0;
+          if(count>=10) throw new Error('LIMIT');
+          var seq=count+1;
+          tx.set(rateRef,{ uid:uid, dateKey:dateKey, count:seq, updatedAt:firebase.firestore.FieldValue.serverTimestamp() },{ merge:true });
+          tx.set(msgRef,{ texto:text, apodo:apodo, uid:uid, sexo:sexo, pais:pais, dailySeq:seq, dateKey:dateKey, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+        });
+      });
+      _lastMsgAt=now; rlCountMsg(); el('salaInput').value='';
+    }
+  }catch(err){
+    if(err&&err.message==='LIMIT'){ toast('💬 Llegaste a tus 10 mensajes de hoy. Con Premium hablas sin límites.'); openPremium(); return; }
+    toast('No se pudo enviar el mensaje.');
+  }
 });
 
 /* Botón "Sala en vivo" en el reproductor */
