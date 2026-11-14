@@ -1721,6 +1721,31 @@ function rlInitSpaceFx(){
   var reduced=false;
   try{ reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
   var W=0,H=0,inView=true,raf=null,last=0,shootAt=9000;
+  /* FIX 2026-11-14 — la órbita de AFUERA nunca se recorta tras la cabecera:
+     al desplazar, el hero sube y el satélite y el planeta pasaban bajo la
+     cabecera fija (.topbar, sticky) y se veían cortados por la mitad.
+     Cada cuerpo se desvanece antes de llegar a ella: con su borde superior
+     a HDR_ZONE (24 px) o más por debajo del borde inferior de la cabecera
+     está entero (opacidad 1); cuando el borde toca la cabecera ya es
+     invisible (opacidad 0). El satélite en móvil lleva halo de 34 px y el
+     planeta en órbita sobresale r*1.2 con su luna; en escritorio los
+     planetas a la deriva se desvanecen por su centro, porque su recorrido
+     llega hasta 30 px del borde del hero y con el borde superior se
+     apagarían en reposo. Se usa ctx.filter='opacity()' porque el satélite
+     y el planeta tocan globalAlpha por dentro (envolverlos con
+     globalAlpha no basta); si el navegador no lo soporta, el cuerpo se
+     oculta de golpe al llegar a la cabecera. */
+  var topbarEl=document.querySelector('.topbar');
+  var filterOK=false; try{ filterOK=('filter' in ctx); }catch(e){}
+  var HDR_ZONE=24;
+  function hdrFadeTop(hrTop,hdrB,y,ext){ var f=(hrTop+y-ext-hdrB)/HDR_ZONE; return f<=0?0:(f>=1?1:f); }
+  function hdrFadeCtr(hrTop,hdrB,y){ var f=(hrTop+y-hdrB)/HDR_ZONE; return f<=0?0:(f>=1?1:f); }
+  function drawFaded(fade,fn){
+    if(fade<=0) return;
+    if(fade>=1){ fn(); return; }
+    if(filterOK){ ctx.save(); ctx.filter='opacity('+fade.toFixed(3)+')'; fn(); ctx.restore(); }
+    else if(fade>=0.5){ fn(); }
+  }
   var stars=[],sats=[],planets=[],meteor=null,patch={cx:0,cy:0,r:0};
   function isMob(){ return window.innerWidth<=760; }
   function rnd(a,b){ return a+Math.random()*(b-a); }
@@ -1959,6 +1984,10 @@ function rlInitSpaceFx(){
   function draw(t,dt){
     ctx.clearRect(0,0,W,H);
     var i;
+    /* Posición del hero y borde inferior de la cabecera en este fotograma
+       (para el desvanecimiento de la órbita antes de la cabecera). */
+    var hrTop=hero.getBoundingClientRect().top;
+    var hdrB=topbarEl?topbarEl.getBoundingClientRect().bottom:0;
     if(patch&&patch.r>0){
       var pg=ctx.createRadialGradient(patch.cx,patch.cy,0,patch.cx,patch.cy,patch.r);
       pg.addColorStop(0,'rgba(2,6,18,0.6)'); pg.addColorStop(0.6,'rgba(2,6,18,0.3)'); pg.addColorStop(1,'rgba(2,6,18,0)');
@@ -1990,12 +2019,18 @@ function rlInitSpaceFx(){
         p.x=Math.max(p.r+4,Math.min(W-p.r-4,p.x));
         p.y=Math.max(p.r+4,Math.min(H-p.r-4,p.y));
       }
-      drawPlanet(p,t);
+      /* Desvanecer antes de la cabecera: el planeta en órbita, por su
+         borde superior (luna incluida); el de la deriva, por su centro. */
+      var pf=p.orb?hdrFadeTop(hrTop,hdrB,p.y,p.r*1.2+4):hdrFadeCtr(hrTop,hdrB,p.y);
+      drawFaded(pf,function(){ drawPlanet(p,t); });
     }
     for(i=0;i<sats.length;i++){
       var s=sats[i];
       s.a+=s.sp*dt;
-      drawSat(s,t,dt);
+      /* La y del satélite es la misma que calcula drawSat; el halo en
+         móvil sobresale 34 px y el cuerpo ~14 px en escritorio. */
+      var sy=s.cy+Math.sin(s.a)*s.ry;
+      drawFaded(hdrFadeTop(hrTop,hdrB,sy,isMob()?36:14),function(){ drawSat(s,t,dt); });
     }
     if(!isMob()){
       if(!meteor&&t>shootAt){
