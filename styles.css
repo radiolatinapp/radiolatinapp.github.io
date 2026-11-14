@@ -265,6 +265,12 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
   .footer-donate .zelle-qr{width:84px}
   .footer-donate .donate-number{font-size:.9rem}
   .footer-donate .donate-method span{font-size:.78rem;overflow-wrap:break-word}
+  /* FIX 2026-11-14 — el correo de Zelle en UNA sola línea en móvil: con
+     .78rem y el <wbr> tras la @ se partía en dos líneas («rico.jeremy@» /
+     «outlook.com»). Con .70rem y nowrap cabe entero en la tarjeta de
+     ~159 px sin partirse a mitad de palabra; el <wbr> queda sin efecto
+     porque nowrap no permite el salto. No toca el botón Copiar correo. */
+  .footer-donate .donate-method .zelle-mail{font-size:.70rem;white-space:nowrap;overflow-wrap:normal}
   .footer-donate .btn-sm{padding:7px 8px;font-size:.78rem}
 }
 /* --- Barra de apoyo (2026-11-14) ---
@@ -672,9 +678,12 @@ main{max-width:1120px;margin:0 auto;padding:0 18px}
    FIX 2026-11-14 — a 390 px dos columnas dejan el mapa en 127 px: la Tierra
    queda diminuta, la píldora de atribución la tapa y no cabe el universo.
    Aquí el globo va primero (order:-1), a todo el ancho y cuadrado, con el
-   texto debajo centrado. NUNCA debajo del texto completo. */
+   texto debajo centrado. NUNCA debajo del texto completo.
+   FIX 2026-11-14 — carril de la órbita: el gap entre el panel y el texto
+   es de 92 px y es el carril por el que orbitan el satélite y el planeta
+   de AFUERA (ver app.js): con 22 px no cabían sin tapar el texto. */
 @media (max-width:480px){
-  .hero{grid-template-columns:minmax(0,1fr);gap:22px;text-align:center;padding:28px 12px 30px}
+  .hero{grid-template-columns:minmax(0,1fr);gap:92px;text-align:center;padding:28px 12px 30px}
   .globe-wrap{order:-1}
   .hero-copy{align-items:center;text-align:center}
   .hero-title{font-size:clamp(2rem,8vw,2.6rem);text-align:center}

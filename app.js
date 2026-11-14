@@ -1727,8 +1727,10 @@ function rlInitSpaceFx(){
   function build(){
     var mob=isMob(),i,n,wr=null;
     var wrap=el('globeWrap'),cx=W/2,cy=H/2,rx=W*0.42,ry=H*0.36;
+    var hr=hero.getBoundingClientRect();
+    var copyEl=hero.querySelector('.hero-copy');
+    var copyR=copyEl?copyEl.getBoundingClientRect():null;
     if(wrap){
-      var hr=hero.getBoundingClientRect();
       wr=wrap.getBoundingClientRect();
       cx=wr.left-hr.left+wr.width/2; cy=wr.top-hr.top+wr.height/2;
       rx=Math.min(wr.width/2+64,W*0.48); ry=Math.min(wr.height/2+56,H*0.42);
@@ -1757,11 +1759,16 @@ function rlInitSpaceFx(){
       stars=[];
       var wTop=wr?Math.max(0,wr.top-hr.top):0, wBot=wTop+(wr?wr.height:0);
       var wL=wr?Math.max(0,wr.left-hr.left):0, wR=wL+(wr?wr.width:0);
+      /* Las estrellas tampoco caen sobre el texto (rectángulo de
+         .hero-copy): solo en el espacio libre alrededor del panel. */
+      var cL=copyR?copyR.left-hr.left:0, cR=copyR?copyR.right-hr.left:0;
+      var cT=copyR?copyR.top-hr.top:0, cB=copyR?copyR.bottom-hr.top:0;
       var tries=0;
-      while(stars.length<30&&tries<300){
+      while(stars.length<30&&tries<600){
         tries++;
         var sx2=rnd(4,W-4), sy2=rnd(Math.max(0,wTop-110),Math.min(H,wBot+110));
         if(sx2>wL-6&&sx2<wR+6&&sy2>wTop-6&&sy2<wBot+6) continue;
+        if(copyR&&sx2>cL-6&&sx2<cR+6&&sy2>cT-6&&sy2<cB+6) continue;
         stars.push({x:sx2,y:sy2,r:rnd(0.9,2.2),p:rnd(0,6.28),s:rnd(0.4,1.1),a:rnd(0.3,0.65)});
       }
     }else{
@@ -1774,21 +1781,39 @@ function rlInitSpaceFx(){
        hace visibles en los dos temas. Está detrás del contenido (el canvas
        es z-index 0) y se desvanece a transparente, sin tapar nada. */
     patch={cx:cx,cy:cy,r:Math.max(rx,ry)+60};
-    /* FIX 2026-11-14 — órbita del universo de AFUERA centrada en el HERO
-       en móvil (antes, en el panel): el panel es casi a todo lo ancho y
-       de fondo sólido, así que la órbita pegada a él (+22 px) dejaba al
-       satélite y al planeta ESCONDIDOS detrás del panel casi toda la
-       órbita (solo asomaban un fragmento en los bordes) y el planeta se
-       recortaba en el borde derecho de la pantalla. Centrada en el hero,
-       la órbita recorre todo el alto (también por detrás del texto, que
-       es transparente) y el satélite/planeta se ven la mayor parte del
-       tiempo. En escritorio no cambia nada (ocx=cx, ocy=cy, orx=rx,
-       ory=ry). */
-    var ocx=cx, ocy=cy, orx=rx, ory=ry;
-    if(mob){
-      ocx=W/2; ocy=Math.round(H*0.58);
-      orx=Math.max(24,W/2-30);
-      ory=Math.max(24,Math.min(H-ocy-30,ocy-30));
+    /* FIX 2026-11-14 — la órbita de AFUERA NUNCA tapa el texto ni se
+       esconde tras la cabecera: el recorrido queda en el espacio libre
+       alrededor del panel. La órbita anterior, centrada en el hero, la
+       recorría entera por detrás del texto (el satélite y el planeta
+       pasaban sobre la pastilla y el párrafo) y su parte alta se metía
+       bajo la cabecera fija al desplazar. Ahora el recorrido se calcula
+       con los rectángulos reales del panel y del texto:
+       - Móvil angosto, una columna (panel a todo lo ancho): el único
+         espacio libre es el carril entre el panel y el texto (el gap
+         del hero es de 92 px en CSS). La órbita es una elipse plana
+         dentro de ese carril, siempre visible y entera, y el carril
+         está ~460 px bajo el inicio del hero, así que solo llega a la
+         cabecera cuando el panel ya se está yendo (desplazamiento
+         normal, no un defecto).
+       - Dos columnas: la órbita abraza el panel, con el radio recortado
+         para no entrar en la columna del texto (30 px de margen por el
+         cuerpo del satélite) ni subir hasta la cabecera (40 px). */
+    var pL=wr?wr.left-hr.left:0, pR=wr?wr.right-hr.left:W;
+    var pT=wr?wr.top-hr.top:0, pB=wr?wr.bottom-hr.top:H;
+    var pCx=(pL+pR)/2, pCy=(pT+pB)/2;
+    var singleCol=!!wr&&wr.width>W*0.72;
+    var ocx=pCx, ocy=pCy, orx=rx, ory=ry;
+    var laneTop=pB+6, laneBot=pB+6, textTop=copyR?copyR.top-hr.top:H;
+    if(singleCol){
+      laneTop=pB+6; laneBot=Math.max(laneTop+40,textTop-6);
+      ocx=W/2; ocy=Math.round((laneTop+laneBot)/2);
+      ory=Math.max(12,Math.min(22,(laneBot-laneTop)/2-22));
+      orx=Math.max(24,Math.min(W/2-30,165));
+    }else{
+      var textRight=copyR?copyR.right-hr.left:0;
+      ocx=pCx; ocy=pCy;
+      orx=Math.max(24,Math.min(rx, pCx-(textRight+30), W-pCx-30));
+      ory=Math.max(24,Math.min(ry, pCy-40, H-pCy-40));
     }
     sats=[
       {a:rnd(0,6.28),sp:0.055,rx:orx,ry:ory,cx:ocx,cy:ocy,wt:0,rings:[],col:'#00F2FE',sc:1},
@@ -1797,18 +1822,24 @@ function rlInitSpaceFx(){
     if(mob) sats.length=1;
     planets=[];
     if(mob){
-      /* Planeta más grande (r 20) en la misma órbita del hero, un poco
-         por dentro que el satélite, y con el radio recortado por la
-         extensión de los anillos (r*1.9) para que NUNCA se corte en el
-         borde de la pantalla. */
+      /* Planeta (r 20) en la misma órbita, un poco por dentro que el
+         satélite; en el carril el radio vertical deja margen para el
+         cuerpo (r 20) y su luna sin salirse del carril, y el horizontal
+         para los anillos (r*1.9) sin cortarse en el borde. */
       var pr=20, ringExt=pr*1.9+6;
-      var prx=Math.max(24,Math.min(orx-24, W/2-ringExt-6));
-      var pry=Math.max(24,Math.min(ory-24, Math.min(H-ocy-ringExt-6, ocy-ringExt-6)));
+      var prx=Math.max(24,Math.min(orx-20, W/2-ringExt-6));
+      var pry=Math.max(10,ory-4);
+      if(singleCol) pry=Math.min(pry,Math.max(10,(laneBot-laneTop)/2-24));
       planets.push({kind:'ringed',orb:true,a:rnd(0,6.28),sp:0.02,rx:prx,ry:pry,cx:ocx,cy:ocy,r:pr,ph:rnd(0,6.28)});
     }
     else{
-      planets.push({kind:'ringed',x:W*0.07,y:H*0.86,r:30,vx:1.6,vy:-0.8,ph:rnd(0,6.28)});
-      planets.push({kind:'rocky',x:W*0.96,y:H*0.10,r:20,vx:-1.4,vy:0.9,ph:rnd(0,6.28)});
+      /* Planetas a la deriva, confinados a la columna del panel para que
+         nunca crucen la columna del texto: derivan en vertical por la
+         franja del panel (se esconden detrás de él al cruzarlo, como
+         antes) y se ven enteros arriba y abajo de él. */
+      var dBx0=Math.max(30,pL-8), dBx1=Math.min(W-30,pR+8);
+      planets.push({kind:'ringed',x:Math.min(Math.max(W*0.07,dBx0),dBx1),y:H*0.86,r:30,vx:1.6,vy:-0.8,ph:rnd(0,6.28),bx0:dBx0,bx1:dBx1,by0:30,by1:H-30});
+      planets.push({kind:'rocky',x:Math.min(Math.max(W*0.96,dBx0),dBx1),y:H*0.10,r:20,vx:-1.4,vy:0.9,ph:rnd(0,6.28),bx0:dBx0,bx1:dBx1,by0:30,by1:H-30});
     }
   }
   function resize(){
@@ -1897,7 +1928,9 @@ function rlInitSpaceFx(){
     if(s.wt<=0){ s.wt=2.4; s.rings.push({r:8,a:0.55}); }
     for(var i=s.rings.length-1;i>=0;i--){
       var rg=s.rings[i]; rg.r+=26*dt; rg.a-=0.30*dt;
-      if(rg.a<=0||rg.r>95){ s.rings.splice(i,1); continue; }
+      /* En móvil las ondas se quedan cortas (45 px) para no salirse del
+         carril de la órbita y rozar el texto; en escritorio, 95 px. */
+      if(rg.a<=0||rg.r>(isMob()?45:95)){ s.rings.splice(i,1); continue; }
       ctx.globalAlpha=rg.a*0.30; ctx.strokeStyle=s.col; ctx.lineWidth=5;
       ctx.beginPath(); ctx.arc(x,y,rg.r,0,6.2832); ctx.stroke();
       ctx.globalAlpha=rg.a; ctx.lineWidth=1.6;
@@ -1946,8 +1979,14 @@ function rlInitSpaceFx(){
         p.x=p.cx+Math.cos(p.a)*p.rx; p.y=p.cy+Math.sin(p.a)*p.ry;
       }else{
         p.x+=p.vx*dt; p.y+=p.vy*dt;
-        if(p.x<W*0.06||p.x>W*0.94) p.vx*=-1;
-        if(p.y<H*0.08||p.y>H*0.92) p.vy*=-1;
+        /* Los planetas a la deriva respetan sus límites propios (bx0/bx1/
+           by0/by1): en escritorio es la columna del panel, para que
+           nunca crucen la columna del texto. Sin límites propios, los
+           de siempre (todo el hero). */
+        var bx0=(p.bx0!=null?p.bx0:W*0.06), bx1=(p.bx1!=null?p.bx1:W*0.94);
+        var by0=(p.by0!=null?p.by0:H*0.08), by1=(p.by1!=null?p.by1:H*0.92);
+        if(p.x<bx0||p.x>bx1) p.vx*=-1;
+        if(p.y<by0||p.y>by1) p.vy*=-1;
         p.x=Math.max(p.r+4,Math.min(W-p.r-4,p.x));
         p.y=Math.max(p.r+4,Math.min(H-p.r-4,p.y));
       }
