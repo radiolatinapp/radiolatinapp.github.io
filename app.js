@@ -43,6 +43,10 @@ var gridLimit=300, lastFiltered=[];
 
 /* ---------- navegación ---------- */
 function go(name){
+    /* FIX 2026-11-15: al volver a una sección principal se quita el hash de 
+         agrega-emisora/agrega-podcast, para que la URL no mienta sobre la vista 
+         y una recarga no reabra el formulario. */ 
+    if((location.hash==='#agrega-emisora'||location.hash==='#agrega-podcast') && history.replaceState) history.replaceState(null,'',location.pathname+location.search);
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   var sec=el('sec-'+name); if(sec) sec.classList.add('active');
   document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-nav')===name); });
@@ -1364,6 +1368,9 @@ renderHistoryRow();
     var sec=pel('agrega-podcast'); if(sec) sec.classList.add('active');
     document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
     var a=pel('navAgregaPod'); if(a) a.classList.add('active');
+        /* FIX 2026-11-15: igual que en openAgregaEmisora, se refleja el hash
+           sin disparar hashchange (replaceState). */
+        if(history.replaceState) history.replaceState(null,'','#agrega-podcast');
     window.scrollTo({top:0,behavior:'smooth'});
     if(window.fbInit) fbInit();
   }
@@ -1435,6 +1442,9 @@ function openAgregaEmisora(){
   if(sec) sec.classList.add('active');
   document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.remove('active'); });
   var a=document.getElementById('navAgrega'); if(a) a.classList.add('active');
+    /* FIX 2026-11-15: el enlace usa preventDefault, así que la URL no cambiaba;
+    se refleja #agrega-emisora sin disparar hashchange (replaceState). */
+    if(history.replaceState) history.replaceState(null,'','#agrega-emisora');
   window.scrollTo({top:0,behavior:'smooth'});
   if(window.fbInit) fbInit();
 }
